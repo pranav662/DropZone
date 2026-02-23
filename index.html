@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DROPZONE - Secure File Sharing</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=7">
 </head>
 
 <body>
@@ -47,9 +47,13 @@
                             <div class="drop-zone-text">
                                 <h2>Drag and drop files here</h2>
                                 <p class="info-text">Files up to 100MB • Expires in 24 hours</p>
+                                <div class="password-input-container" style="margin-top: 15px;">
+                                    <input type="password" id="filePassword" placeholder="Optional Password"
+                                        class="password-input">
+                                </div>
                             </div>
 
-                            <input type="file" id="fileInput" hidden>
+                            <input type="file" id="fileInput" hidden multiple>
                             <label for="fileInput" class="browse-btn">Browse Files</label>
                         </div>
                     </div>
@@ -217,7 +221,19 @@
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <!-- Lightbox -->
+    <div id="lightbox" class="lightbox hidden">
+        <span id="closeLightbox">&times;</span>
+        <img class="lightbox-content" id="lightboxImg">
+    </div>
+
+    <!-- Backend configuration for hosting -->
+    <script>
+        // Set your hosted backend URL here (e.g., 'https://your-app.onrender.com')
+        // Leave empty ('') for local development
+        window.BACKEND_URL = 'https://dropzone-66yr.onrender.com'; 
+    </script>
+    <script src="script.js?v=7"></script>
 </body>
 
 </html>
