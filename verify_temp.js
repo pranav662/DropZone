@@ -1,29 +1,50 @@
+const axios = require('axios');
 const fs = require('fs');
-const http = require('http');
+const FormData = require('form-data');
 const path = require('path');
-const FormData = require('form-data'); // We need to install this or use another way, but strict nodejs http is verbose.
-// Let's use fetch since Node 18+ has it. Assuming modern node.
 
-async function runTests() {
-    const baseUrl = 'http://localhost:3000';
-    console.log('Starting verification...');
+const BASE_URL = 'http://localhost:3000';
 
-    // 1. Upload File
-    console.log('\n--- Testing Upload ---');
-    const formData = new FormData();
-    const fileStream = fs.createReadStream(path.join(__dirname, 'testfile.txt'));
+async function testPdfPreview() {
+    try {
+        // Create a dummy PDF file (just text content but mimetype application/pdf for testing)
+        const filePath = path.join(__dirname, 'test.pdf');
+        fs.writeFileSync(filePath, '%PDF-1.4\n%...Mock PDF Content...');
 
-    // We need to implement multipart upload manually if we don't want extra deps.
-    // Easier to just use a fetch with a Boundary.
-    // Actually, let's just use the 'axios' or 'form-data' if available, but I don't want to install more deps just for testing if I can avoid it.
-    // I already installed 'qrcode' effectively. 'axios/form-data' are common.
-    // Let's rely on standard fetch if possible.
+        // Upload
+        const form = new FormData();
+        form.append('files', fs.createReadStream(filePath), { contentType: 'application/pdf', filename: 'test.pdf' });
 
-    // Since constructing multipart/form-data is painful in native fetch without FormData (which might be available),
-    // I'll try to use the 'curl' command via child_process for the upload part if node's fetch doesn't support file streams easily yet (it varies by version).
-    // ACTUALLY, I can just use a simple curl command in the agent to test upload, then use node for the rest.
-    // But I want a script.
+        console.log('Uploading PDF file...');
+        const res = await axios.post(`${BASE_URL}/api/upload`, form, {
+            headers: { ...form.getHeaders() }
+        });
 
-    // Let's try to simple curl for upload.
+        if (res.data.success) {
+            const file = res.data.files[0];
+            console.log('Upload success! ShareID:', file.shareId);
+
+            // 1. Try GET Landing Page (Should contain <embed ... type="application/pdf">)
+            console.log('Fetching Landing Page...');
+            const getRes = await axios.get(file.shareUrl, { responseType: 'text' });
+
+            if (getRes.data.includes('type="application/pdf"') && getRes.data.includes('<embed')) {
+                console.log('PASS: Landing Page contains PDF Embed tag');
+            } else {
+                console.error('FAIL: PDF Embed tag missing');
+                // console.log(getRes.data);
+            }
+
+        } else {
+            console.error('Upload failed');
+        }
+
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+
+    } catch (error) {
+        console.error('Test failed:', error.message);
+        if (error.response) console.error('Response data:', error.response.data);
+    }
 }
-// Changing strategy: I will use `curl` commands directly via run_command to test. It's cleaner given the environment.
+
+testPdfPreview();
