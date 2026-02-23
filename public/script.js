@@ -90,7 +90,8 @@ function uploadFiles(files) {
         formData.append('password', password);
     }
 
-    xhr.open('POST', '/api/upload', true);
+    const backendUrl = window.BACKEND_URL || '';
+    xhr.open('POST', backendUrl + '/api/upload', true);
 
     xhr.upload.addEventListener('progress', (e) => {
         if (e.lengthComputable) {
@@ -247,7 +248,8 @@ function createFileListUI(files, originalFiles) {
 // Fetch QR Code (Single)
 async function fetchQrCode(shareId) {
     try {
-        const response = await fetch(`/api/qr/${shareId}`);
+        const backendUrl = window.BACKEND_URL || '';
+        const response = await fetch(`${backendUrl}/api/qr/${shareId}`);
         const data = await response.json();
         if (data.success && data.qrCode) renderQr(data.qrCode, `qr-${shareId}.png`);
     } catch (e) { console.error('QR Error', e); }
@@ -256,7 +258,8 @@ async function fetchQrCode(shareId) {
 // Fetch QR Code (Batch)
 async function fetchBatchQrCode(batchId) {
     try {
-        const response = await fetch(`/api/qr-batch/${batchId}`);
+        const backendUrl = window.BACKEND_URL || '';
+        const response = await fetch(`${backendUrl}/api/qr-batch/${batchId}`);
         const data = await response.json();
         if (data.success && data.qrCode) renderQr(data.qrCode, `qr-batch-${batchId}.png`);
     } catch (e) { console.error('Batch QR Error', e); }
@@ -291,7 +294,8 @@ emailForm.addEventListener('submit', async (e) => {
     sendEmailBtn.disabled = true;
 
     try {
-        const response = await fetch('/api/send-email', {
+        const backendUrl = window.BACKEND_URL || '';
+        const response = await fetch(`${backendUrl}/api/send-email`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

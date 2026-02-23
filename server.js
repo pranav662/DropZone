@@ -153,8 +153,8 @@ app.post('/api/upload', upload.array('files'), async (req, res) => {
 
         let batchUrl = null;
         if (batchId) {
-            const host = req.get('host').includes('localhost') ? `${getNetworkIp()}:${PORT}` : req.get('host');
-            batchUrl = `${req.protocol}://${host}/download/batch/${batchId}`;
+            const hostUrl = process.env.HOST_URL || (req.get('host').includes('localhost') ? `${req.protocol}://${getNetworkIp()}:${PORT}` : `${req.protocol}://${req.get('host')}`);
+            batchUrl = `${hostUrl}/download/batch/${batchId}`;
         }
 
         // Handle Password (hash it once if same for all, or per file logic)
@@ -207,9 +207,9 @@ app.post('/api/upload', upload.array('files'), async (req, res) => {
                 deleteFile(shareId);
             }, 24 * 60 * 60 * 1000);
 
-            // Use LAN IP if possible for better mobile sharing
-            const host = req.get('host').includes('localhost') ? `${getNetworkIp()}:${PORT}` : req.get('host');
-            const shareUrl = `${req.protocol}://${host}/download/${shareId}`;
+            // Use HOST_URL environment variable if provided
+            const hostUrl = process.env.HOST_URL || (req.get('host').includes('localhost') ? `${req.protocol}://${getNetworkIp()}:${PORT}` : `${req.protocol}://${req.get('host')}`);
+            const shareUrl = `${hostUrl}/download/${shareId}`;
 
             uploadedFiles.push({
                 shareId,
@@ -634,8 +634,8 @@ app.get('/api/qr/:shareId', async (req, res) => {
             return res.status(404).json({ error: 'File not found or expired' });
         }
 
-        const host = req.get('host').includes('localhost') ? `${getNetworkIp()}:${PORT}` : req.get('host');
-        const shareUrl = `${req.protocol}://${host}/download/${shareId}`;
+        const hostUrl = process.env.HOST_URL || (req.get('host').includes('localhost') ? `${req.protocol}://${getNetworkIp()}:${PORT}` : `${req.protocol}://${req.get('host')}`);
+        const shareUrl = `${hostUrl}/download/${shareId}`;
         const start = Date.now();
         const qrCodeDataUrl = await QRCode.toDataURL(shareUrl);
 
@@ -660,8 +660,8 @@ app.get('/api/qr-batch/:batchId', async (req, res) => {
             return res.status(404).json({ error: 'Batch not found' });
         }
 
-        const host = req.get('host').includes('localhost') ? `${getNetworkIp()}:${PORT}` : req.get('host');
-        const shareUrl = `${req.protocol}://${host}/download/batch/${batchId}`;
+        const hostUrl = process.env.HOST_URL || (req.get('host').includes('localhost') ? `${req.protocol}://${getNetworkIp()}:${PORT}` : `${req.protocol}://${req.get('host')}`);
+        const shareUrl = `${hostUrl}/download/batch/${batchId}`;
         const qrCodeDataUrl = await QRCode.toDataURL(shareUrl);
 
         res.json({
