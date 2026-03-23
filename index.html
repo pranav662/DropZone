@@ -5,7 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DROPZONE - P2P Secure File Sharing</title>
-    <meta name="description" content="Share files directly between browsers using WebRTC with DTLS 1.3 encryption. No server storage, completely private.">
+    <meta name="description"
+        content="Share files directly between browsers using WebRTC with DTLS 1.3 encryption. No server storage, completely private.">
     <link rel="stylesheet" href="styles.css?v=8">
 </head>
 
@@ -58,7 +59,8 @@
                     <!-- Active Sessions (Reconnection) -->
                     <div id="activeSessionsPanel" class="active-sessions hidden">
                         <h3>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
                                 <polyline points="1 4 1 10 7 10"></polyline>
                                 <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
                             </svg>
@@ -161,8 +163,7 @@
                         <div class="tab-pane active" data-pane="link">
                             <label class="input-label">P2P Share Link</label>
                             <div class="link-container">
-                                <input type="text" id="shareLink" class="share-input" readonly
-                                    value="">
+                                <input type="text" id="shareLink" class="share-input" readonly value="">
                                 <button id="copyBtn" class="copy-btn">
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                         stroke-width="2">
@@ -244,16 +245,16 @@
     </div>
 
     <!-- Socket.IO + WebRTC Scripts -->
-    <script src="/socket.io/socket.io.js"></script>
+    <!-- Socket.io from CDN for static hosting compatibility -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script src="webrtc.js?v=8"></script>
-
+    <script src="script.js?v=7"></script>
     <!-- Backend configuration for hosting -->
     <script>
         // Set your hosted backend URL here (e.g., 'https://your-app.onrender.com')
         // Leave empty ('') for local development
         window.BACKEND_URL = '';
     </script>
-    <script src="script.js?v=8"></script>
 </body>
 
 </html>
