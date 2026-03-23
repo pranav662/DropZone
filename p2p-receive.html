@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Receiving File - DropZone P2P</title>
+    <meta name="description" content="Receive files securely via WebRTC P2P transfer with DTLS 1.3 encryption.">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0a0e1a;
+            color: #e2e8f0;
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .card {
+            background: linear-gradient(135deg, #1a1f2e 0%, #151926 100%);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        .logo h1 {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: 4px;
+            color: #f8fafc;
+        }
+
+        .logo p {
+            font-size: 12px;
+            color: #64748b;
+            letter-spacing: 1px;
+        }
+
+        .divider {
+            height: 1px;
+            background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.08), transparent);
+            margin: 24px 0;
+        }
+
+        /* Status Section */
+        .status-section {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .status-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+            font-size: 36px;
+        }
+
+        .status-icon.connecting {
+            background: rgba(234, 179, 8, 0.1);
+            border: 2px solid rgba(234, 179, 8, 0.3);
+            animation: pulse 2s infinite;
+        }
+
+        .status-icon.connected {
+            background: rgba(34, 197, 94, 0.1);
+            border: 2px solid rgba(34, 197, 94, 0.3);
+        }
+
+        .status-icon.transferring {
+            background: rgba(59, 130, 246, 0.1);
+            border: 2px solid rgba(59, 130, 246, 0.3);
+            animation: pulse 1.5s infinite;
+        }
+
+        .status-icon.complete {
+            background: rgba(34, 197, 94, 0.1);
+            border: 2px solid rgba(34, 197, 94, 0.3);
+        }
+
+        .status-icon.error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 2px solid rgba(239, 68, 68, 0.3);
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            50% {
+                transform: scale(1.05);
+                opacity: 0.8;
+            }
+        }
+
+        .status-text {
+            font-size: 18px;
+            font-weight: 600;
+            color: #f1f5f9;
+            margin-bottom: 4px;
+        }
+
+        .status-sub {
+            font-size: 13px;
+            color: #64748b;
+        }
+
+        /* File Info */
+        .file-info {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 24px;
+        }
+
+        .file-icon-box {
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+            background: rgba(59, 130, 246, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .file-icon-box svg {
+            color: #60a5fa;
+        }
+
+        .file-details {
+            min-width: 0;
+            flex: 1;
+        }
+
+        .file-name {
+            font-size: 15px;
+            font-weight: 600;
+            color: #f1f5f9;
+            word-break: break-all;
+            margin-bottom: 2px;
+        }
+
+        .file-meta {
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        /* Progress */
+        .progress-section {
+            margin-bottom: 20px;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .progress-label {
+            color: #94a3b8;
+        }
+
+        .progress-pct {
+            color: #60a5fa;
+            font-weight: 600;
+        }
+
+        .progress-bar-bg {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #60a5fa);
+            border-radius: 3px;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        /* Security Badge */
+        .security-badge {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px;
+            background: rgba(34, 197, 94, 0.06);
+            border: 1px solid rgba(34, 197, 94, 0.15);
+            border-radius: 8px;
+            margin-top: 24px;
+        }
+
+        .security-badge svg {
+            color: #22c55e;
+            flex-shrink: 0;
+        }
+
+        .security-badge span {
+            font-size: 12px;
+            color: #86efac;
+        }
+
+        /* Error state */
+        .error-message {
+            text-align: center;
+            margin-top: 16px;
+        }
+
+        .error-message p {
+            font-size: 14px;
+            color: #fca5a5;
+            margin-bottom: 16px;
+        }
+
+        .retry-btn {
+            padding: 10px 24px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+
+        .retry-btn:hover {
+            background: #2563eb;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Files list (multi-file) */
+        .files-list {
+            margin-bottom: 24px;
+        }
+
+        .files-list .file-info {
+            margin-bottom: 8px;
+        }
+
+        .files-list .file-info:last-child {
+            margin-bottom: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+        <!-- Logo -->
+        <div class="logo">
+            <h1>DROPZONE</h1>
+            <p>P2P SECURE TRANSFER</p>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Status -->
+        <div class="status-section">
+            <div class="status-icon connecting" id="statusIcon">⏳</div>
+            <div class="status-text" id="statusText">Connecting to sender...</div>
+            <div class="status-sub" id="statusSub">Establishing secure DTLS 1.3 connection</div>
+        </div>
+
+        <!-- File Info (hidden until metadata received) -->
+        <div id="fileInfoSection" class="hidden">
+            <div class="files-list" id="filesList"></div>
+        </div>
+
+        <!-- Progress (hidden until transfer starts) -->
+        <div id="progressSection" class="progress-section hidden">
+            <div class="progress-header">
+                <span class="progress-label" id="progressLabel">Receiving...</span>
+                <span class="progress-pct" id="progressPct">0%</span>
+            </div>
+            <div class="progress-bar-bg">
+                <div class="progress-bar-fill" id="progressFill"></div>
+            </div>
+        </div>
+
+        <!-- Error (hidden by default) -->
+        <div id="errorSection" class="error-message hidden">
+            <p id="errorText">Sender is not online.</p>
+            <button class="retry-btn" onclick="location.reload()">Retry Connection</button>
+        </div>
+
+        <!-- Security Badge -->
+        <div class="security-badge">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            <span>End-to-end encrypted with DTLS 1.3 • Direct P2P transfer</span>
+        </div>
+    </div>
+
+    <!-- Socket.IO + WebRTC -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/webrtc.js?v=8"></script>
+    <script>
+        // Set your hosted backend URL here (e.g., 'https://your-app.onrender.com')
+        // Leave empty ('') for local development
+        window.BACKEND_URL = '';
+    </script>
+    <script>
+        // ============================================================
+        // P2P Receiver Logic
+        // ============================================================
+
+        const roomId = window.location.pathname.split('/p2p/')[1] || window.location.search.split('?room=')[1];
+
+        const statusIcon = document.getElementById('statusIcon');
+        const statusText = document.getElementById('statusText');
+        const statusSub = document.getElementById('statusSub');
+        const fileInfoSection = document.getElementById('fileInfoSection');
+        const filesList = document.getElementById('filesList');
+        const progressSection = document.getElementById('progressSection');
+        const progressLabel = document.getElementById('progressLabel');
+        const progressPct = document.getElementById('progressPct');
+        const progressFill = document.getElementById('progressFill');
+        const errorSection = document.getElementById('errorSection');
+        const errorText = document.getElementById('errorText');
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function setStatus(icon, text, sub, iconClass) {
+            statusIcon.textContent = icon;
+            statusIcon.className = 'status-icon ' + iconClass;
+            statusText.textContent = text;
+            statusSub.textContent = sub;
+        }
+
+        function showFiles(files) {
+            fileInfoSection.classList.remove('hidden');
+            filesList.innerHTML = files.map(f => `
+                <div class="file-info">
+                    <div class="file-icon-box">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+                            <polyline points="13 2 13 9 20 9"></polyline>
+                        </svg>
+                    </div>
+                    <div class="file-details">
+                        <div class="file-name">${f.name}</div>
+                        <div class="file-meta">${formatFileSize(f.size)} • ${f.type || 'Unknown type'}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function init() {
+            if (!roomId) {
+                setStatus('❌', 'Invalid link', 'No room ID found', 'error');
+                return;
+            }
+
+            // Check room status first
+            try {
+                const backendUrl = window.BACKEND_URL || '';
+                const res = await fetch(`${backendUrl}/api/room/${roomId}`);
+                const data = await res.json();
+
+                if (!data.active) {
+                    setStatus('❌', 'Share expired', 'This share link is no longer available', 'error');
+                    errorSection.classList.remove('hidden');
+                    errorText.textContent = 'This share has expired or does not exist.';
+                    return;
+                }
+
+                if (!data.senderOnline) {
+                    setStatus('⏸️', 'Sender is offline', 'They need to reopen DropZone to share', 'error');
+                    errorSection.classList.remove('hidden');
+                    errorText.textContent = 'The sender is not currently online. Ask them to reopen DropZone and reconnect.';
+                    return;
+                }
+
+                // Show file info
+                if (data.files) {
+                    showFiles(data.files);
+                }
+            } catch (e) {
+                console.error('Room check failed:', e);
+            }
+
+            // Connect and join room
+            const webrtc = new DropZoneWebRTC();
+
+            webrtc.onStatusChange = (status) => {
+                switch (status) {
+                    case 'connecting':
+                        setStatus('🔗', 'Connecting...', 'Establishing secure connection', 'connecting');
+                        break;
+                    case 'connected':
+                        setStatus('🤝', 'Connected!', 'Waiting for file transfer to begin', 'connected');
+                        break;
+                    case 'transferring':
+                        setStatus('📡', 'Receiving file...', 'Encrypted P2P transfer in progress', 'transferring');
+                        progressSection.classList.remove('hidden');
+                        break;
+                    case 'complete':
+                        setStatus('✅', 'Transfer complete!', 'File(s) downloaded successfully', 'complete');
+                        progressFill.style.width = '100%';
+                        progressPct.textContent = '100%';
+                        progressLabel.textContent = 'Complete!';
+                        break;
+                    case 'sender-offline':
+                        setStatus('⏸️', 'Sender went offline', 'Waiting for reconnection...', 'error');
+                        break;
+                    case 'error':
+                        setStatus('❌', 'Connection failed', 'Please try again', 'error');
+                        errorSection.classList.remove('hidden');
+                        break;
+                }
+            };
+
+            webrtc.onProgress = (info) => {
+                const pct = Math.round(info.progress);
+                progressFill.style.width = pct + '%';
+                progressPct.textContent = pct + '%';
+                progressLabel.textContent = `Receiving ${info.fileName}...`;
+            };
+
+            webrtc.onFileReceived = (file) => {
+                console.log(`File received: ${file.name} (${formatFileSize(file.size)})`);
+            };
+
+            webrtc.onError = (msg) => {
+                errorSection.classList.remove('hidden');
+                errorText.textContent = msg;
+            };
+
+            try {
+                const backendUrl = window.BACKEND_URL || '';
+                await webrtc.connect(backendUrl || undefined);
+                await webrtc.joinRoom(roomId);
+            } catch (e) {
+                setStatus('❌', 'Connection failed', e.message, 'error');
+                errorSection.classList.remove('hidden');
+                errorText.textContent = 'Could not connect to server. Please check your connection.';
+            }
+        }
+
+        init();
+    </script>
+</body>
+
+</html>
