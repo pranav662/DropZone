@@ -301,13 +301,24 @@ function loadActiveSessions() {
         return `
             <div class="session-item" data-room-id="${session.roomId}">
                 <div class="session-info">
-                    <span class="session-name">${fileNames}</span>
-                    <span class="session-meta">${formatFileSize(totalSize)} • ${ageText}</span>
+                    <span class="session-name" style="font-weight: 600; font-size: 14px;">${fileNames}</span>
+                    <span class="session-meta" style="display: block; font-size: 12px; opacity: 0.6; font-family: 'Space Mono', monospace;">${formatFileSize(totalSize)} • ${ageText}</span>
                 </div>
-                <button class="session-reconnect-btn" onclick="reconnectSession('${session.roomId}')">
-                    Reconnect
-                </button>
-                <button class="session-remove-btn" onclick="removeSessionUI('${session.roomId}')">✕</button>
+                <div class="session-actions">
+                    <button class="reconnect-btn" onclick="reconnectSession('${session.roomId}')" title="Restore P2P Room">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="23 4 23 10 17 10"></polyline>
+                            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                        </svg>
+                        Restore
+                    </button>
+                    <button class="remove-btn" onclick="removeSessionUI('${session.roomId}')" title="Remove Share">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
             </div>
         `;
     }).join('');
@@ -345,6 +356,26 @@ window.removeSessionUI = function (roomId) {
 
 // Load sessions on page load
 loadActiveSessions();
+
+// ============================================================
+// TAB NAVIGATION (RE-ADDED)
+// ============================================================
+
+document.addEventListener('click', e => {
+    const tabBtn = e.target.closest('.tab-btn');
+    if (tabBtn) {
+        const tab = tabBtn.dataset.tab;
+        
+        // Update button states
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        tabBtn.classList.add('active');
+        
+        // Update pane visibility
+        document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+        const activePane = document.querySelector(`.tab-pane[data-pane="${tab}"]`);
+        if (activePane) activePane.classList.add('active');
+    }
+});
 
 // ============================================================
 // COPY BUTTON
