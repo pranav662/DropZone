@@ -100,7 +100,7 @@ async function handleFiles(files) {
     showState('uploading');
 
     try {
-        const backendUrl = window.BACKEND_URL || '';
+        const backendUrl = window.BACKEND_URL || 'https://dropzone-66yr.onrender.com';
 
         // 1. Create room on server
         const filesMeta = currentFileList.map(f => ({
@@ -130,6 +130,15 @@ async function handleFiles(files) {
 
         webrtc.onStatusChange = (status) => {
             updateP2PStatus(status);
+        };
+
+        webrtc.onSecurityStats = (stats) => {
+            const dtlsVersionEl = document.getElementById('p2pDtlsVersion');
+            const dtlsTextEl = document.getElementById('p2pDtlsText');
+            if (dtlsVersionEl && dtlsTextEl) {
+                dtlsTextEl.textContent = stats.version;
+                dtlsVersionEl.classList.add('active');
+            }
         };
 
         webrtc.onProgress = (info) => {
@@ -430,6 +439,9 @@ resetBtn.addEventListener('click', () => {
     currentFileList = [];
     peerCountEl.textContent = '';
     peerCountEl.style.display = 'none';
+    
+    const dtlsVersionEl = document.getElementById('p2pDtlsVersion');
+    if (dtlsVersionEl) dtlsVersionEl.classList.remove('active');
 
     if (webrtc) {
         webrtc.disconnect();

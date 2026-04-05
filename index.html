@@ -115,9 +115,16 @@
 
                     <!-- P2P Status Badge -->
                     <div class="p2p-status" id="p2pStatus">
-                        <span class="p2p-dot live"></span>
-                        <span class="p2p-label">P2P Active — Waiting for receivers</span>
+                        <span class="p2p-dot live" id="p2pDot"></span>
+                        <span class="p2p-label" id="p2pLabel">P2P Active — Waiting for receivers</span>
                         <span class="p2p-peers" id="peerCount"></span>
+                        <span class="p2p-dtls-version" id="p2pDtlsVersion">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                            </svg>
+                            <span id="p2pDtlsText">DTLS</span>
+                        </span>
                     </div>
 
                     <!-- Share Heading -->
@@ -253,7 +260,7 @@
     <script>
         // Set your hosted backend URL here (e.g., 'https://your-app.onrender.com')
         // Leave empty ('') for local development
-        window.BACKEND_URL = '';
+        window.BACKEND_URL = 'https://dropzone-66yr.onrender.com';
     </script>
 </body>
 

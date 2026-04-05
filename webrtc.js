@@ -19,12 +19,14 @@ class DropZoneWebRTC {
         this.onFileReceived = null;
         this.onError = null;
         this.onPeerCount = null;
+        this.onSecurityStats = null;
 
         // Receiver state
         this._receiveBuffers = new Map(); // peerId -> { chunks, metadata, received }
 
         // ICE candidate buffering for signaling race conditions
         this.earlyCandidates = new Map(); // peerId -> Array of candidate
+        this.securityIntervals = new Map(); // peerId -> intervalId
     }
 
     // ============================================================
@@ -101,10 +103,65 @@ class DropZoneWebRTC {
         // Log DTLS state
         pc.ondtlsstatechange = () => {
             console.log(`[WebRTC] DTLS state: ${pc.sctp?.transport?.state || 'unknown'}`);
+            if (pc.sctp?.transport?.state === 'connected') {
+                this._startSecurityMonitoring(peerId, pc);
+            }
         };
 
         this.peerConnections.set(peerId, pc);
         return pc;
+    }
+
+    // ============================================================
+    // SECURITY MONITORING
+    // ============================================================
+    _startSecurityMonitoring(peerId, pc) {
+        if (this.securityIntervals.has(peerId)) return;
+        
+        let attempts = 0;
+        const intervalId = setInterval(async () => {
+            attempts++;
+            if (pc.connectionState !== 'connected' && attempts > 1) {
+                // If disconnected after initial connection, clear
+                clearInterval(intervalId);
+                this.securityIntervals.delete(peerId);
+                return;
+            }
+
+            if (attempts > 30) { // Stop after 45s
+                clearInterval(intervalId);
+                this.securityIntervals.delete(peerId);
+                return;
+            }
+
+            try {
+                const stats = await pc.getStats();
+                stats.forEach(report => {
+                    if (report.type === 'transport') {
+                        if (report.tlsVersion) {
+                            const version = report.tlsVersion === '0304' ? 'DTLS 1.3' : 
+                                          report.tlsVersion === '0303' ? 'DTLS 1.2' : report.tlsVersion;
+                            
+                            console.log(`[Security] Negotiated: ${version}, Cipher: ${report.dtlsCipher}`);
+                            if (this.onSecurityStats) {
+                                this.onSecurityStats({
+                                    peerId,
+                                    version,
+                                    cipher: report.dtlsCipher
+                                });
+                            }
+                            
+                            clearInterval(intervalId);
+                            this.securityIntervals.delete(peerId);
+                        }
+                    }
+                });
+            } catch (e) {
+                console.warn('[WebRTC] Security stats check failed:', e);
+            }
+        }, 1500);
+        
+        this.securityIntervals.set(peerId, intervalId);
     }
 
     // ============================================================
@@ -380,10 +437,10 @@ class DropZoneWebRTC {
             } else if (msg.type === 'all-complete') {
                 this._emitStatus('complete');
 
-                // Auto-download all files
-                for (const file of state.files) {
-                    this._downloadBlob(file.blob, file.name);
-                }
+                // Auto-download disabled in favor of manual UI buttons
+                // for (const file of state.files) {
+                //     this._downloadBlob(file.blob, file.name);
+                // }
             }
         } else {
             // Binary chunk
@@ -506,6 +563,11 @@ class DropZoneWebRTC {
     }
 
     _cleanupPeer(peerId) {
+        if (this.securityIntervals.has(peerId)) {
+            clearInterval(this.securityIntervals.get(peerId));
+            this.securityIntervals.delete(peerId);
+        }
+
         const dc = this.dataChannels.get(peerId);
         if (dc) {
             dc.close();
@@ -534,6 +596,31 @@ class DropZoneWebRTC {
 
         this.roomId = null;
         this.role = null;
+    }
+
+    // ============================================================
+    // EXTERNAL API FOR UI
+    // ============================================================
+    getReceivedFiles(senderId) {
+        const state = this._receiveBuffers.get(senderId);
+        return state ? state.files : [];
+    }
+
+    downloadFile(senderId, fileIndex) {
+        const state = this._receiveBuffers.get(senderId);
+        if (state && state.files[fileIndex]) {
+            const file = state.files[fileIndex];
+            this._downloadBlob(file.blob, file.name);
+        }
+    }
+
+    downloadAll(senderId) {
+        const state = this._receiveBuffers.get(senderId);
+        if (state) {
+            state.files.forEach(file => {
+                this._downloadBlob(file.blob, file.name);
+            });
+        }
     }
 }
 
