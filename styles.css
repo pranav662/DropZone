@@ -250,6 +250,30 @@ body::before {
 
 .active-sessions { margin-top: 40px; padding-top: 30px; border-top: 1px solid rgba(255,255,255,0.05); }
 
+.session-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px; background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 16px;
+    margin-top: 12px; transition: 0.3s;
+}
+
+.session-item:hover { background: rgba(255, 255, 255, 0.04); transform: translateX(4px); }
+
+.session-actions { display: flex; gap: 8px; }
+
+.reconnect-btn {
+    background: rgba(59, 130, 246, 0.1); color: var(--accent-primary);
+    border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 8px;
+    padding: 6px 12px; cursor: pointer; font-size: 12px; font-weight: 600;
+}
+
+.remove-btn {
+    background: rgba(239, 68, 68, 0.1); color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 8px;
+    width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+}
+
 @media (max-width: 640px) {
     .sharing-grid { grid-template-columns: 1fr; }
     .content { padding: 24px; }
