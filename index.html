@@ -7,7 +7,7 @@
     <title>DROPZONE - P2P Secure File Sharing</title>
     <meta name="description"
         content="Share files directly between browsers using WebRTC with DTLS 1.3 encryption. No server storage, completely private.">
-    <link rel="stylesheet" href="styles.css?v=8">
+    <link rel="stylesheet" href="styles.css?v=12">
 </head>
 
 <body>
@@ -48,11 +48,11 @@
 
                             <div class="drop-zone-text">
                                 <h2>Drag and drop files here</h2>
-                                <p class="info-text">Direct P2P transfer • No size limit • DTLS 1.3 encrypted</p>
+                                <p class="info-text" style="margin-bottom: 24px;">Direct P2P transfer • No size limit • DTLS 1.3 encrypted</p>
                             </div>
 
                             <input type="file" id="fileInput" hidden multiple>
-                            <label for="fileInput" class="browse-btn">Browse Files</label>
+                            <label for="fileInput" class="browse-btn" style="margin-top: 10px;">Browse Files</label>
                         </div>
                     </div>
 
@@ -127,48 +127,19 @@
                         </span>
                     </div>
 
-                    <!-- Share Heading -->
-                    <div class="share-heading">
-                        <h2>Share Your File</h2>
-                        <p class="info-text">Choose a sharing method below</p>
-                    </div>
+                    <!-- Unified Sharing Section -->
+                    <div class="sharing-container">
+                        <div class="share-heading">
+                            <h2>Share Your File</h2>
+                            <p class="info-text">Choose a sharing method below</p>
+                        </div>
 
-                    <!-- Tab Navigation -->
-                    <div class="tab-nav">
-                        <button class="tab-btn active" data-tab="link">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2">
-                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                            </svg>
-                            Link
-                        </button>
-                        <button class="tab-btn" data-tab="email">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2">
-                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z">
-                                </path>
-                                <polyline points="22,6 12,13 2,6"></polyline>
-                            </svg>
-                            Email
-                        </button>
-                        <button class="tab-btn" data-tab="qr">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2">
-                                <rect x="3" y="3" width="7" height="7"></rect>
-                                <rect x="14" y="3" width="7" height="7"></rect>
-                                <rect x="14" y="14" width="7" height="7"></rect>
-                                <rect x="3" y="14" width="7" height="7"></rect>
-                            </svg>
-                            QR Code
-                        </button>
-                    </div>
-
-                    <!-- Tab Content -->
-                    <div class="tab-content">
-                        <!-- TAB A: LINK -->
-                        <div class="tab-pane active" data-pane="link">
-                            <label class="input-label">P2P Share Link</label>
+                        <!-- Method 1: Link -->
+                        <div class="sharing-method-card">
+                            <label class="input-label">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                                P2P Share Link
+                            </label>
                             <div class="link-container">
                                 <input type="text" id="shareLink" class="share-input" readonly value="">
                                 <button id="copyBtn" class="copy-btn">
@@ -180,63 +151,38 @@
                                     <span id="copyBtnText">Copy</span>
                                 </button>
                             </div>
-                            <p class="help-text">Anyone with this link can download directly from your browser</p>
                         </div>
 
-                        <!-- TAB B: EMAIL -->
-                        <div class="tab-pane" data-pane="email">
-                            <form id="emailForm">
-                                <div class="form-group">
-                                    <label for="recipientEmail" class="input-label">Recipient Email *</label>
-                                    <input type="email" id="recipientEmail" class="form-input"
-                                        placeholder="friend@example.com" required>
-                                </div>
-
-                                <div class="form-group">
-                                    <label for="senderEmail" class="input-label">Your Email (Optional)</label>
-                                    <input type="email" id="senderEmail" class="form-input"
-                                        placeholder="you@example.com">
-                                </div>
-
-                                <button type="submit" id="sendEmailBtn" class="submit-btn">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                        stroke-width="2">
-                                        <path
-                                            d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z">
-                                        </path>
-                                        <polyline points="22,6 12,13 2,6"></polyline>
-                                    </svg>
-                                    <span id="sendBtnText">Send Email</span>
-                                </button>
-                            </form>
-                        </div>
-
-                        <!-- TAB C: QR CODE -->
-                        <div class="tab-pane" data-pane="qr">
-                            <div class="qr-section">
-                                <div class="qr-code-container">
-                                    <div class="qr-code" id="qrCode">
-                                        <svg width="120" height="120" viewBox="0 0 24 24" fill="none"
-                                            stroke="currentColor" stroke-width="2">
-                                            <rect x="3" y="3" width="7" height="7"></rect>
-                                            <rect x="14" y="3" width="7" height="7"></rect>
-                                            <rect x="14" y="14" width="7" height="7"></rect>
-                                            <rect x="3" y="14" width="7" height="7"></rect>
-                                        </svg>
+                        <div class="sharing-grid">
+                            <!-- Method 2: Email -->
+                            <div class="sharing-method-card">
+                                <label class="input-label">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                                    Send via Email
+                                </label>
+                                <form id="emailForm">
+                                    <div class="form-group">
+                                        <input type="email" id="recipientEmail" class="form-input"
+                                            placeholder="friend@email.com" required>
                                     </div>
-                                </div>
+                                    <button type="submit" id="sendEmailBtn" class="submit-btn" style="width: 100%;">
+                                        <span>Send Link</span>
+                                    </button>
+                                </form>
+                            </div>
 
-                                <p class="help-text">Scan to receive file via P2P</p>
-                                <button id="downloadQrBtn" class="submit-btn">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                        stroke-width="2">
-                                        <rect x="3" y="3" width="7" height="7"></rect>
-                                        <rect x="14" y="3" width="7" height="7"></rect>
-                                        <rect x="14" y="14" width="7" height="7"></rect>
-                                        <rect x="3" y="14" width="7" height="7"></rect>
-                                    </svg>
-                                    Download QR Code
-                                </button>
+                            <!-- Method 3: QR Code -->
+                            <div class="sharing-method-card">
+                                <label class="input-label">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                                    Scan QR Code
+                                </label>
+                                <div class="qr-compact-container">
+                                    <div class="qr-code" id="qrCode"></div>
+                                    <button id="downloadQrBtn" class="icon-only-btn" title="Download QR">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -252,14 +198,11 @@
     </div>
 
     <!-- Socket.IO + WebRTC Scripts -->
-    <!-- Socket.io from CDN for static hosting compatibility -->
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-    <script src="webrtc.js?v=8"></script>
-    <script src="script.js?v=7"></script>
+    <script src="webrtc.js?v=12"></script>
+    <script src="script.js?v=8"></script>
     <!-- Backend configuration for hosting -->
     <script>
-        // Set your hosted backend URL here (e.g., 'https://your-app.onrender.com')
-        // Leave empty ('') for local development
         window.BACKEND_URL = 'https://dropzone-66yr.onrender.com';
     </script>
 </body>

@@ -347,21 +347,6 @@ window.removeSessionUI = function (roomId) {
 loadActiveSessions();
 
 // ============================================================
-// TAB NAVIGATION
-// ============================================================
-
-document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-
-        const tab = btn.dataset.tab;
-        document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-        document.querySelector(`.tab-pane[data-pane="${tab}"]`).classList.add('active');
-    });
-});
-
-// ============================================================
 // COPY BUTTON
 // ============================================================
 
