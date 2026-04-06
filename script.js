@@ -100,7 +100,7 @@ async function handleFiles(files) {
     showState('uploading');
 
     try {
-        const backendUrl = window.BACKEND_URL || 'https://dropzone-66yr.onrender.com';
+        const backendUrl = window.BACKEND_URL || window.location.origin;
 
         // 1. Create room on server
         const filesMeta = currentFileList.map(f => ({
@@ -157,7 +157,7 @@ async function handleFiles(files) {
             }
         };
 
-        await webrtc.connect(backendUrl || undefined);
+        await webrtc.connect(backendUrl);
         await webrtc.createRoom(currentRoomId, currentFileList);
 
         // 3. Save session to localStorage for reconnection
@@ -223,7 +223,7 @@ function updateP2PStatus(status) {
 
 async function fetchQrCode(roomId) {
     try {
-        const backendUrl = window.BACKEND_URL || '';
+        const backendUrl = window.BACKEND_URL || window.location.origin;
         const clientUrl = window.location.origin + window.location.pathname.replace('index.html', '');
         const response = await fetch(`${backendUrl}/api/qr/${roomId}?clientUrl=${encodeURIComponent(clientUrl)}`);
         const data = await response.json();
@@ -327,7 +327,7 @@ function loadActiveSessions() {
 window.reconnectSession = async function (roomId) {
     // Check if room is still active on server
     try {
-        const backendUrl = window.BACKEND_URL || '';
+        const backendUrl = window.BACKEND_URL || window.location.origin;
         const res = await fetch(`${backendUrl}/api/room/${roomId}`);
         const data = await res.json();
 
@@ -404,7 +404,7 @@ emailForm.addEventListener('submit', async (e) => {
     sendEmailBtn.disabled = true;
 
     try {
-        const backendUrl = window.BACKEND_URL || '';
+        const backendUrl = window.BACKEND_URL || window.location.origin;
         const response = await fetch(`${backendUrl}/api/send-email`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

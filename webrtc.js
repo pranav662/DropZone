@@ -37,6 +37,9 @@ class DropZoneWebRTC {
             iceServers: [
                 { urls: 'stun:stun.l.google.com:19302' },
                 { urls: 'stun:stun1.l.google.com:19302' },
+                { urls: 'stun:stun2.l.google.com:19302' },
+                { urls: 'stun:stun3.l.google.com:19302' },
+                { urls: 'stun:stun4.l.google.com:19302' },
                 {
                     urls: 'turn:openrelay.metered.ca:80',
                     username: 'openrelayproject',
@@ -44,6 +47,11 @@ class DropZoneWebRTC {
                 },
                 {
                     urls: 'turn:openrelay.metered.ca:443',
+                    username: 'openrelayproject',
+                    credential: 'openrelayproject'
+                },
+                {
+                    urls: 'turn:openrelay.metered.ca:443?transport=tcp',
                     username: 'openrelayproject',
                     credential: 'openrelayproject'
                 }
@@ -79,6 +87,8 @@ class DropZoneWebRTC {
 
         pc.onicecandidate = (event) => {
             if (event.candidate) {
+                const type = event.candidate.type || 'unknown';
+                console.log(`[WebRTC] ICE candidate found: ${type} for ${peerId}`);
                 this.socket.emit('ice-candidate', {
                     candidate: event.candidate,
                     targetId: peerId
@@ -86,16 +96,30 @@ class DropZoneWebRTC {
             }
         };
 
+        // Add connection timeout
+        const connectionTimeout = setTimeout(() => {
+            if (pc.connectionState !== 'connected') {
+                console.warn(`[WebRTC] Connection timeout for ${peerId}`);
+                if (pc.connectionState === 'connecting' || pc.connectionState === 'new') {
+                    this._emitStatus('error');
+                    if (this.onError) this.onError('Connection timed out. This often happens on hotspots with AP Isolation. Try turning off your laptop firewall or using a different Wi-Fi.');
+                }
+            }
+        }, 15000); // 15s timeout
+
         pc.onconnectionstatechange = () => {
             console.log(`[WebRTC] Connection state (${peerId}): ${pc.connectionState}`);
             if (pc.connectionState === 'connected') {
+                clearTimeout(connectionTimeout);
                 this._emitStatus('connected');
             } else if (pc.connectionState === 'failed') {
+                clearTimeout(connectionTimeout);
                 console.error(`[WebRTC] P2P Connection failed for ${peerId} (NAT/Firewall issue)`);
                 this._emitStatus('error');
-                if (this.onError) this.onError('P2P Connection failed. A strict firewall or network NAT is blocking the direct connection.');
+                if (this.onError) this.onError('P2P Connection failed. A strict firewall or network NAT (like AP Isolation) is blocking the direct connection.');
                 this._cleanupPeer(peerId);
             } else if (pc.connectionState === 'disconnected') {
+                clearTimeout(connectionTimeout);
                 this._cleanupPeer(peerId);
             }
         };

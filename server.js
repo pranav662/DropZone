@@ -13,7 +13,9 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: { origin: '*' },
-    maxHttpBufferSize: 1e8 // 100MB for signaling
+    maxHttpBufferSize: 1e8, // 100MB for signaling
+    pingInterval: 10000,
+    pingTimeout: 5000
 });
 
 const PORT = process.env.PORT || 3000;
