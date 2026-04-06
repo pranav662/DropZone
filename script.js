@@ -3,37 +3,40 @@
 // ============================================================
 
 // DOM Elements
-const uploadState = document.getElementById('uploadState');
-const uploadingState = document.getElementById('uploadingState');
-const sharingState = document.getElementById('sharingState');
-const dropZone = document.getElementById('dropZone');
-const fileInput = document.getElementById('fileInput');
-const fileName = document.getElementById('fileName');
-const fileSize = document.getElementById('fileSize');
+const uploadState      = document.getElementById('uploadState');
+const uploadingState   = document.getElementById('uploadingState');
+const sharingState     = document.getElementById('sharingState');
+const dropZone         = document.getElementById('dropZone');
+const fileInput        = document.getElementById('fileInput');
+const fileName         = document.getElementById('fileName');
+const fileSize         = document.getElementById('fileSize');
 const fileNameComplete = document.getElementById('fileNameComplete');
 const fileSizeComplete = document.getElementById('fileSizeComplete');
-const progressBar = document.getElementById('progressBar');
-const progressPercent = document.getElementById('progressPercent');
-const shareLink = document.getElementById('shareLink');
-const copyBtn = document.getElementById('copyBtn');
-const copyBtnText = document.getElementById('copyBtnText');
-const emailForm = document.getElementById('emailForm');
-const sendEmailBtn = document.getElementById('sendEmailBtn');
-const resetBtn = document.getElementById('resetBtn');
-const qrCode = document.getElementById('qrCode');
-const downloadQrBtn = document.getElementById('downloadQrBtn');
-const p2pStatusEl = document.getElementById('p2pStatus');
-const p2pLabel = p2pStatusEl.querySelector('.p2p-label');
-const p2pDot = p2pStatusEl.querySelector('.p2p-dot');
-const peerCountEl = document.getElementById('peerCount');
+const progressBar      = document.getElementById('progressBar');
+const progressPercent  = document.getElementById('progressPercent');
+const shareLink        = document.getElementById('shareLink');
+const copyBtn          = document.getElementById('copyBtn');
+const copyBtnText      = document.getElementById('copyBtnText');
+const emailForm        = document.getElementById('emailForm');
+const sendEmailBtn     = document.getElementById('sendEmailBtn');
+const resetBtn         = document.getElementById('resetBtn');
+const qrCode           = document.getElementById('qrCode');
+const downloadQrBtn    = document.getElementById('downloadQrBtn');
+const p2pStatusEl      = document.getElementById('p2pStatus');
+const p2pLabel         = p2pStatusEl ? p2pStatusEl.querySelector('.p2p-label') : null;
+const p2pDot           = p2pStatusEl ? p2pStatusEl.querySelector('.p2p-dot')  : null;
+const peerCountEl      = document.getElementById('peerCount');
 const activeSessionsPanel = document.getElementById('activeSessionsPanel');
-const sessionsList = document.getElementById('sessionsList');
+const sessionsList     = document.getElementById('sessionsList');
 
 // Global State
-let currentShareUrl = null;
-let currentRoomId = null;
-let currentFileList = [];
-let webrtc = null;
+let currentShareUrl  = null;
+let currentRoomId    = null;
+let currentFileList  = [];
+let webrtc           = null;
+
+// Reconnection state
+let _pendingReconnect = null; // { roomId, shareUrl, filesMeta[] }
 
 // ============================================================
 // HELPERS
@@ -69,8 +72,8 @@ function showState(state) {
 // ============================================================
 
 dropZone.addEventListener('dragenter', (e) => { e.preventDefault(); dropZone.classList.add('drag-active'); });
-dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-active'); });
-dropZone.addEventListener('dragleave', () => { dropZone.classList.remove('drag-active'); });
+dropZone.addEventListener('dragover',  (e) => { e.preventDefault(); dropZone.classList.add('drag-active'); });
+dropZone.addEventListener('dragleave', ()  => { dropZone.classList.remove('drag-active'); });
 dropZone.addEventListener('drop', (e) => {
     e.preventDefault();
     dropZone.classList.remove('drag-active');
@@ -83,7 +86,7 @@ fileInput.addEventListener('change', (e) => {
 });
 
 // ============================================================
-// HANDLE FILES — Create P2P Room
+// HANDLE FILES — Create P2P Room OR Reconnect
 // ============================================================
 
 async function handleFiles(files) {
@@ -94,60 +97,164 @@ async function handleFiles(files) {
         ? currentFileList[0].name
         : `${currentFileList.length} files`;
 
-    // Show connecting state
     fileName.textContent = displayName;
     fileSize.textContent = formatFileSize(totalSize);
     showState('uploading');
 
+    // If we have a pending reconnect, try to reuse that room
+    if (_pendingReconnect) {
+        const reconnect = _pendingReconnect;
+        _pendingReconnect = null;
+        await _reconnectToRoom(reconnect, currentFileList, displayName, totalSize);
+        return;
+    }
+
     try {
         const backendUrl = window.BACKEND_URL || window.location.origin;
 
-        // 1. Create room on server
-        const filesMeta = currentFileList.map(f => ({
-            name: f.name,
-            size: f.size,
-            type: f.type
-        }));
-
+        const filesMeta = currentFileList.map(f => ({ name: f.name, size: f.size, type: f.type }));
         const clientUrl = window.location.origin + window.location.pathname.replace('index.html', '');
+
         const response = await fetch(`${backendUrl}/api/create-room`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                files: filesMeta,
-                clientUrl: clientUrl
-            })
+            body: JSON.stringify({ files: filesMeta, clientUrl })
         });
 
         const data = await response.json();
         if (!data.success) throw new Error('Failed to create room');
 
-        currentRoomId = data.roomId;
+        currentRoomId   = data.roomId;
         currentShareUrl = data.shareUrl;
 
-        // 2. Connect WebRTC and join room as sender
-        webrtc = new DropZoneWebRTC();
+        await _startWebRTC(backendUrl, currentRoomId, currentFileList);
 
-        webrtc.onStatusChange = (status) => {
-            updateP2PStatus(status);
-        };
+        saveSession(currentRoomId, filesMeta, currentShareUrl);
 
-        webrtc.onSecurityStats = (stats) => {
-            const dtlsVersionEl = document.getElementById('p2pDtlsVersion');
-            const dtlsTextEl = document.getElementById('p2pDtlsText');
-            if (dtlsVersionEl && dtlsTextEl) {
-                dtlsTextEl.textContent = stats.version;
-                dtlsVersionEl.classList.add('active');
-            }
-        };
+        fileNameComplete.textContent = displayName;
+        fileSizeComplete.textContent = `${formatFileSize(totalSize)} • P2P Ready`;
+        shareLink.value = currentShareUrl;
+        showState('sharing');
+        fetchQrCode(currentRoomId);
 
-        webrtc.onProgress = (info) => {
-            // Update progress in sharing state if needed
-            const pct = Math.round(info.progress);
-            p2pLabel.textContent = `Sending ${info.fileName}... ${pct}%`;
-        };
+        if (window.showToast) showToast('P2P room ready — share your link!', 'success');
 
-        webrtc.onPeerCount = (count) => {
+    } catch (error) {
+        console.error('Share error:', error);
+        if (window.showToast) showToast('Failed to set up P2P sharing: ' + error.message, 'error');
+        else alert('Failed to set up P2P sharing: ' + error.message);
+        showState('upload');
+    }
+}
+
+// Reconnect to an existing room without creating a new one
+async function _reconnectToRoom(reconnect, files, displayName, totalSize) {
+    try {
+        const backendUrl = window.BACKEND_URL || 'https://dropzone-66yr.onrender.com';
+
+        // Check room still alive on server
+        const res = await fetch(`${backendUrl}/api/room/${reconnect.roomId}`);
+        const roomData = await res.json();
+
+        if (!roomData.active) {
+            if (window.showToast) showToast('Session expired — creating a new share.', 'default');
+            else alert('Session expired. Creating a new share.');
+            removeSession(reconnect.roomId);
+            loadActiveSessions();
+            _pendingReconnect = null;
+            await handleFilesNewRoom(files, displayName, totalSize);
+            return;
+        }
+
+        currentRoomId   = reconnect.roomId;
+        currentShareUrl = reconnect.shareUrl;
+
+        await _startWebRTC(backendUrl, currentRoomId, files);
+
+        // Update session timestamp
+        const filesMeta = files.map(f => ({ name: f.name, size: f.size, type: f.type }));
+        saveSession(currentRoomId, filesMeta, currentShareUrl);
+
+        fileNameComplete.textContent = displayName;
+        fileSizeComplete.textContent = `${formatFileSize(totalSize)} • P2P Reconnected`;
+        shareLink.value = currentShareUrl;
+        showState('sharing');
+        fetchQrCode(currentRoomId);
+
+        if (window.showToast) showToast('Room restored — your link is still active!', 'success');
+
+    } catch (err) {
+        console.error('Reconnect error:', err);
+        if (window.showToast) showToast('Reconnect failed. Creating new share...', 'error');
+        _pendingReconnect = null;
+        await handleFilesNewRoom(files, displayName, totalSize);
+    }
+}
+
+// Create new room when reconnect falls back
+async function handleFilesNewRoom(files, displayName, totalSize) {
+    try {
+        const backendUrl = window.BACKEND_URL || 'https://dropzone-66yr.onrender.com';
+        const filesMeta = files.map(f => ({ name: f.name, size: f.size, type: f.type }));
+        const clientUrl = window.location.origin + window.location.pathname.replace('index.html', '');
+
+        const response = await fetch(`${backendUrl}/api/create-room`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ files: filesMeta, clientUrl })
+        });
+        const data = await response.json();
+        if (!data.success) throw new Error('Failed to create room');
+
+        currentRoomId   = data.roomId;
+        currentShareUrl = data.shareUrl;
+
+        await _startWebRTC(backendUrl, currentRoomId, files);
+        saveSession(currentRoomId, filesMeta, currentShareUrl);
+
+        fileNameComplete.textContent = displayName;
+        fileSizeComplete.textContent = `${formatFileSize(totalSize)} • P2P Ready`;
+        shareLink.value = currentShareUrl;
+        showState('sharing');
+        fetchQrCode(currentRoomId);
+    } catch (err) {
+        console.error('handleFilesNewRoom error:', err);
+        showState('upload');
+    }
+}
+
+// ============================================================
+// SHARED WebRTC SETUP
+// ============================================================
+
+async function _startWebRTC(backendUrl, roomId, files) {
+    if (webrtc) {
+        webrtc.disconnect();
+        webrtc = null;
+    }
+
+    webrtc = new DropZoneWebRTC();
+
+    webrtc.onStatusChange = (status) => { updateP2PStatus(status); };
+
+    webrtc.onSecurityStats = (stats) => {
+        const dtlsVersionEl = document.getElementById('p2pDtlsVersion');
+        const dtlsTextEl    = document.getElementById('p2pDtlsText');
+        if (dtlsVersionEl && dtlsTextEl) {
+            dtlsTextEl.textContent = stats.version;
+            dtlsVersionEl.classList.add('active');
+        }
+    };
+
+    webrtc.onProgress = (info) => {
+        const pct = Math.round(info.progress);
+        if (p2pLabel) p2pLabel.textContent = `Sending ${info.fileName}… ${pct}%`;
+        if (progressBar) progressBar.style.width = Math.min(pct, 100) + '%';
+        if (progressPercent) progressPercent.textContent = pct + '%';
+    };
+
+    webrtc.onPeerCount = (count) => {
+        if (peerCountEl) {
             if (count > 0) {
                 peerCountEl.textContent = `${count} peer${count > 1 ? 's' : ''} connected`;
                 peerCountEl.style.display = 'inline';
@@ -155,28 +262,15 @@ async function handleFiles(files) {
                 peerCountEl.textContent = '';
                 peerCountEl.style.display = 'none';
             }
-        };
+        }
+    };
 
-        await webrtc.connect(backendUrl);
-        await webrtc.createRoom(currentRoomId, currentFileList);
+    webrtc.onError = (msg) => {
+        if (window.showToast) showToast(msg, 'error', 5000);
+    };
 
-        // 3. Save session to localStorage for reconnection
-        saveSession(currentRoomId, filesMeta);
-
-        // 4. Show sharing state
-        fileNameComplete.textContent = displayName;
-        fileSizeComplete.textContent = `${formatFileSize(totalSize)} • P2P Ready`;
-        shareLink.value = currentShareUrl;
-        showState('sharing');
-
-        // 5. Fetch QR code
-        fetchQrCode(currentRoomId);
-
-    } catch (error) {
-        console.error('Share error:', error);
-        alert('Failed to set up P2P sharing: ' + error.message);
-        showState('upload');
-    }
+    await webrtc.connect(backendUrl || undefined);
+    await webrtc.createRoom(roomId, files);
 }
 
 // ============================================================
@@ -184,6 +278,8 @@ async function handleFiles(files) {
 // ============================================================
 
 function updateP2PStatus(status) {
+    if (!p2pDot || !p2pLabel) return;
+
     p2pDot.className = 'p2p-dot';
 
     switch (status) {
@@ -198,6 +294,7 @@ function updateP2PStatus(status) {
         case 'connected':
             p2pDot.classList.add('live');
             p2pLabel.textContent = 'Peer connected — Ready to transfer';
+            if (window.showToast) showToast('Peer connected!', 'success');
             break;
         case 'transferring':
             p2pDot.classList.add('transferring');
@@ -206,8 +303,9 @@ function updateP2PStatus(status) {
         case 'complete':
             p2pDot.classList.add('live');
             p2pLabel.textContent = 'Transfer complete ✓';
+            if (window.showToast) showToast('Transfer complete!', 'success');
             setTimeout(() => {
-                p2pLabel.textContent = 'P2P Active — Waiting for receivers';
+                if (p2pLabel) p2pLabel.textContent = 'P2P Active — Waiting for receivers';
             }, 5000);
             break;
         case 'error':
@@ -224,25 +322,22 @@ function updateP2PStatus(status) {
 async function fetchQrCode(roomId) {
     try {
         const backendUrl = window.BACKEND_URL || window.location.origin;
-        const clientUrl = window.location.origin + window.location.pathname.replace('index.html', '');
-        const response = await fetch(`${backendUrl}/api/qr/${roomId}?clientUrl=${encodeURIComponent(clientUrl)}`);
-        const data = await response.json();
-
-        if (data.success) {
-            renderQr(data.qrCode, `dropzone-qr-${roomId}.png`);
-        }
+        const clientUrl  = window.location.origin + window.location.pathname.replace('index.html', '');
+        const response   = await fetch(`${backendUrl}/api/qr/${roomId}?clientUrl=${encodeURIComponent(clientUrl)}`);
+        const data       = await response.json();
+        if (data.success) renderQr(data.qrCode, `dropzone-qr-${roomId}.png`);
     } catch (error) {
         console.error('QR Code error:', error);
     }
 }
 
 function renderQr(dataUrl, downloadName) {
-    qrCode.innerHTML = `<img src="${dataUrl}" alt="QR Code" style="width: 200px; height: 200px; border-radius: 8px;">`;
+    qrCode.innerHTML = `<img src="${dataUrl}" alt="QR Code" style="width:200px;height:200px;border-radius:8px;display:block;">`;
 
     if (downloadQrBtn) {
         downloadQrBtn.onclick = () => {
             const a = document.createElement('a');
-            a.href = dataUrl;
+            a.href     = dataUrl;
             a.download = downloadName;
             document.body.appendChild(a);
             a.click();
@@ -252,38 +347,27 @@ function renderQr(dataUrl, downloadName) {
 }
 
 // ============================================================
-// SESSION MANAGEMENT (Reconnection)
+// SESSION MANAGEMENT — Improved Reconnection
 // ============================================================
 
-function saveSession(roomId, filesMeta) {
+function saveSession(roomId, filesMeta, shareUrl) {
     const sessions = JSON.parse(localStorage.getItem('dropzone_sessions') || '[]');
-
-    // Remove any existing session with same roomId
-    const filtered = sessions.filter(s => s.roomId !== roomId);
-    filtered.push({
-        roomId,
-        files: filesMeta,
-        createdAt: Date.now()
-    });
-
-    // Keep only last 5 sessions
+    const filtered  = sessions.filter(s => s.roomId !== roomId);
+    filtered.push({ roomId, files: filesMeta, shareUrl, createdAt: Date.now() });
     const trimmed = filtered.slice(-5);
     localStorage.setItem('dropzone_sessions', JSON.stringify(trimmed));
 }
 
 function removeSession(roomId) {
     const sessions = JSON.parse(localStorage.getItem('dropzone_sessions') || '[]');
-    const filtered = sessions.filter(s => s.roomId !== roomId);
-    localStorage.setItem('dropzone_sessions', JSON.stringify(filtered));
+    localStorage.setItem('dropzone_sessions', JSON.stringify(sessions.filter(s => s.roomId !== roomId)));
 }
 
 function loadActiveSessions() {
     const sessions = JSON.parse(localStorage.getItem('dropzone_sessions') || '[]');
-    const now = Date.now();
-    const maxAge = 24 * 60 * 60 * 1000;
-
-    // Filter out expired
-    const active = sessions.filter(s => now - s.createdAt < maxAge);
+    const now      = Date.now();
+    const maxAge   = 24 * 60 * 60 * 1000;
+    const active   = sessions.filter(s => now - s.createdAt < maxAge);
     localStorage.setItem('dropzone_sessions', JSON.stringify(active));
 
     if (active.length === 0) {
@@ -295,14 +379,14 @@ function loadActiveSessions() {
     sessionsList.innerHTML = active.map(session => {
         const fileNames = session.files.map(f => f.name).join(', ');
         const totalSize = session.files.reduce((sum, f) => sum + f.size, 0);
-        const age = Math.round((now - session.createdAt) / (60 * 1000));
-        const ageText = age < 60 ? `${age}m ago` : `${Math.round(age / 60)}h ago`;
+        const age       = Math.round((now - session.createdAt) / (60 * 1000));
+        const ageText   = age < 60 ? `${age}m ago` : `${Math.round(age / 60)}h ago`;
 
         return `
             <div class="session-item" data-room-id="${session.roomId}">
                 <div class="session-info">
-                    <span class="session-name" style="font-weight: 600; font-size: 14px;">${fileNames}</span>
-                    <span class="session-meta" style="display: block; font-size: 12px; opacity: 0.6; font-family: 'Space Mono', monospace;">${formatFileSize(totalSize)} • ${ageText}</span>
+                    <span class="session-name" style="font-weight:600;font-size:14px;">${fileNames}</span>
+                    <span class="session-meta" style="display:block;font-size:12px;opacity:0.6;font-family:'Space Mono',monospace;margin-top:4px;">${formatFileSize(totalSize)} • ${ageText}</span>
                 </div>
                 <div class="session-actions">
                     <button class="reconnect-btn" onclick="reconnectSession('${session.roomId}')" title="Restore P2P Room">
@@ -324,30 +408,109 @@ function loadActiveSessions() {
     }).join('');
 }
 
+// ─── RECONNECTION — Modal-driven flow ──────────────────────
+
 window.reconnectSession = async function (roomId) {
-    // Check if room is still active on server
+    // Retrieve stored session
+    const sessions = JSON.parse(localStorage.getItem('dropzone_sessions') || '[]');
+    const session  = sessions.find(s => s.roomId === roomId);
+    if (!session) { loadActiveSessions(); return; }
+
     try {
         const backendUrl = window.BACKEND_URL || window.location.origin;
-        const res = await fetch(`${backendUrl}/api/room/${roomId}`);
+        const res  = await fetch(`${backendUrl}/api/room/${roomId}`);
         const data = await res.json();
 
         if (!data.active) {
-            alert('This share has expired. Please create a new share.');
+            if (window.showToast) showToast('Session expired. It cannot be restored.', 'error');
             removeSession(roomId);
             loadActiveSessions();
             return;
         }
-
-        // Prompt user to re-select the file
-        alert('Please re-select the same file(s) to reconnect. The P2P room will be restored.');
-
-        // Store the roomId to reconnect after file selection
-        window._reconnectRoomId = roomId;
-        fileInput.click();
     } catch (e) {
-        alert('Failed to check room status.');
+        if (window.showToast) showToast('Could not check session status. Proceeding...', 'default');
     }
+
+    // Determine the share URL — use stored one or rebuild
+    const shareUrl = session.shareUrl || `${window.location.origin}/p2p-receive.html?room=${roomId}`;
+
+    // Show modal asking user to re-select files
+    _showReconnectModal(session, shareUrl);
 };
+
+function _showReconnectModal(session, shareUrl) {
+    // Remove any existing modal
+    const existingModal = document.getElementById('reconnectModal');
+    if (existingModal) existingModal.remove();
+
+    const fileNames = session.files.map(f => f.name).join('\n');
+    const totalSize = session.files.reduce((sum, f) => sum + f.size, 0);
+
+    const overlay = document.createElement('div');
+    overlay.id = 'reconnectModal';
+    overlay.className = 'reconnect-modal-overlay';
+    overlay.innerHTML = `
+        <div class="reconnect-modal">
+            <div style="font-size:48px;margin-bottom:20px;animation:iconFloat 3s ease-in-out infinite;">🔄</div>
+            <h3>Restore Session</h3>
+            <p>Re-select the same file(s) to reconnect to your existing P2P room.<br>Your share link will remain the same.</p>
+
+            <div class="session-file-list">
+                ${session.files.map(f => `
+                    <div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(99,102,241,0.8)" stroke-width="2">
+                            <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+                            <polyline points="13 2 13 9 20 9"></polyline>
+                        </svg>
+                        <p>${f.name} <span style="opacity:0.5;">(${formatFileSize(f.size)})</span></p>
+                    </div>
+                `).join('')}
+            </div>
+
+            <div class="reconnect-modal-actions">
+                <button id="reconnectPickBtn" class="browse-btn" style="flex:1;justify-content:center;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    Select Files
+                </button>
+                <button id="reconnectCancelBtn" style="padding:16px 20px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:14px;color:var(--slate-400);cursor:pointer;font-weight:600;transition:all 0.2s;">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    // Store the reconnect intent
+    _pendingReconnect = {
+        roomId:   session.roomId,
+        shareUrl: shareUrl,
+        filesMeta: session.files
+    };
+
+    document.getElementById('reconnectPickBtn').addEventListener('click', () => {
+        overlay.remove();
+        fileInput.value = '';
+        fileInput.click();
+    });
+
+    document.getElementById('reconnectCancelBtn').addEventListener('click', () => {
+        overlay.remove();
+        _pendingReconnect = null;
+    });
+
+    // Close on overlay click
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            overlay.remove();
+            _pendingReconnect = null;
+        }
+    });
+}
 
 window.removeSessionUI = function (roomId) {
     removeSession(roomId);
@@ -358,19 +521,272 @@ window.removeSessionUI = function (roomId) {
 loadActiveSessions();
 
 // ============================================================
-// TAB NAVIGATION (RE-ADDED)
+// RECIPIENT TAG MANAGEMENT
+// ============================================================
+
+const recipientChevronBtn  = document.getElementById('recipientChevron');
+const extraRecipientsArea  = document.getElementById('extraRecipientsArea');
+const recipientsTags       = document.getElementById('recipientsTags');
+const addRecipientInput    = document.getElementById('addRecipientInput');
+const addContactBtn        = document.getElementById('addContactBtn');
+const addListBtn           = document.getElementById('addListBtn');
+
+if (recipientChevronBtn) {
+    recipientChevronBtn.addEventListener('click', () => {
+        const isOpen = recipientChevronBtn.classList.toggle('open');
+        extraRecipientsArea.classList.toggle('hidden', !isOpen);
+        if (isOpen && addRecipientInput) addRecipientInput.focus();
+    });
+}
+
+function addRecipientTag(email) {
+    if (!email || !recipientsTags) return;
+    // Deduplicate
+    const existing = Array.from(document.querySelectorAll('.recipient-tag')).map(t => t.dataset.email);
+    if (existing.includes(email)) return;
+
+    const tag = document.createElement('span');
+    tag.className    = 'recipient-tag';
+    tag.dataset.email = email;
+    tag.innerHTML    = `${email}<button type="button" title="Remove" onclick="this.parentElement.remove()">×</button>`;
+    recipientsTags.appendChild(tag);
+    if (addRecipientInput) addRecipientInput.value = '';
+}
+
+if (addRecipientInput) {
+    addRecipientInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ',') {
+            e.preventDefault();
+            const v = addRecipientInput.value.trim().replace(/,$/, '');
+            if (v.includes('@')) addRecipientTag(v);
+        }
+    });
+
+    addRecipientInput.addEventListener('blur', () => {
+        const v = addRecipientInput.value.trim();
+        if (v.includes('@')) addRecipientTag(v);
+    });
+}
+
+// ============================================================
+// QUICK PICK (Contacts / Lists) Logic
+// ============================================================
+
+const quickPickOverlay = document.getElementById('quickPickOverlay');
+const quickPickList    = document.getElementById('quickPickList');
+const quickPickTitle   = document.getElementById('quickPickTitle');
+const closeQuickPick   = document.getElementById('closeQuickPick');
+const addNewContactBtn = document.getElementById('addNewContactBtn');
+const newContactForm   = document.getElementById('newContactForm');
+const saveNewContactBtn = document.getElementById('saveNewContactBtn');
+
+// Mock data + Persistence
+const MOCK_CONTACTS = [
+    { name: 'Sarah Chen', email: 'sarah.c@example.com' },
+    { name: 'Alex Rivera', email: 'alex.riv@example.com' },
+    { name: 'Tech Team', email: 'dev-team@company.org' }
+];
+
+function getStoredContacts() {
+    const stored = localStorage.getItem('dropzone_contacts');
+    const merged = stored ? JSON.parse(stored) : MOCK_CONTACTS;
+    // Filter out deleted mock contacts if any (stored in a separate delete list)
+    const deleted = JSON.parse(localStorage.getItem('dropzone_deleted_mock') || '[]');
+    return merged.filter(c => !deleted.includes(c.email));
+}
+
+function getRecentLists() {
+    const stored = localStorage.getItem('dropzone_recent_lists');
+    return stored ? JSON.parse(stored) : [];
+}
+
+function saveContact(email, name = '') {
+    if (!email.includes('@')) return;
+    const contacts = getStoredContacts();
+    if (!contacts.find(c => c.email === email)) {
+        contacts.unshift({ name: name || email.split('@')[0], email });
+        localStorage.setItem('dropzone_contacts', JSON.stringify(contacts.slice(0, 20)));
+    }
+}
+
+function deleteContact(email) {
+    const contacts = JSON.parse(localStorage.getItem('dropzone_contacts') || '[]');
+    const isMock = MOCK_CONTACTS.find(c => c.email === email);
+
+    if (isMock) {
+        const deleted = JSON.parse(localStorage.getItem('dropzone_deleted_mock') || '[]');
+        deleted.push(email);
+        localStorage.setItem('dropzone_deleted_mock', JSON.stringify(deleted));
+    }
+
+    const filtered = contacts.filter(c => c.email !== email);
+    localStorage.setItem('dropzone_contacts', JSON.stringify(filtered));
+    openQuickPick('contacts'); // Re-render
+}
+
+function deleteRecentList(index) {
+    const lists = getRecentLists();
+    lists.splice(index, 1);
+    localStorage.setItem('dropzone_recent_lists', JSON.stringify(lists));
+    openQuickPick('lists'); // Re-render
+}
+
+function saveRecentList(emails) {
+    if (!emails || emails.length < 2) return;
+    const lists = getRecentLists();
+    const listStr = emails.sort().join(',');
+    if (!lists.find(l => l.emails.sort().join(',') === listStr)) {
+        lists.unshift({ name: `Group (${emails.length})`, emails });
+        localStorage.setItem('dropzone_recent_lists', JSON.stringify(lists.slice(0, 10)));
+    }
+}
+
+function openQuickPick(type) {
+    if (!quickPickOverlay || !quickPickList) return;
+
+    quickPickTitle.textContent = type === 'contacts' ? 'Select Contact' : 'Recent Lists';
+    quickPickList.innerHTML = '';
+
+    // Hide add button for lists, show for contacts
+    if (addNewContactBtn) addNewContactBtn.style.display = type === 'contacts' ? 'flex' : 'none';
+    if (newContactForm) newContactForm.classList.add('hidden');
+    if (addNewContactBtn) addNewContactBtn.classList.remove('active');
+
+    const items = type === 'contacts' ? getStoredContacts() : getRecentLists();
+
+    if (items.length === 0) {
+        quickPickList.innerHTML = `<div class="quick-pick-empty"><p>No ${type} found yet.</p></div>`;
+    } else {
+        items.forEach((item, index) => {
+            const el = document.createElement('div');
+            el.className = 'quick-pick-item';
+            el.style.animationDelay = `${index * 40}ms`;
+
+            const icon = type === 'contacts'
+                ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`
+                : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>`;
+
+            el.innerHTML = `
+                <div class="item-avatar">${icon}</div>
+                <div class="item-content">
+                    <span class="item-name">${item.name}</span>
+                    <span class="item-email">${type === 'contacts' ? item.email : item.emails.join(', ')}</span>
+                </div>
+                <button class="remove-item-btn" title="Remove">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                </button>
+            `;
+
+            // Click to select
+            el.onclick = (e) => {
+                if (e.target.closest('.remove-item-btn')) return;
+                if (type === 'contacts') {
+                    addRecipientTag(item.email);
+                } else {
+                    item.emails.forEach(email => addRecipientTag(email));
+                }
+                closeQuickPickModal();
+            };
+
+            // Click to remove
+            const removeBtn = el.querySelector('.remove-item-btn');
+            removeBtn.onclick = (e) => {
+                e.stopPropagation();
+                if (type === 'contacts') {
+                    deleteContact(item.email);
+                } else {
+                    deleteRecentList(index);
+                }
+            };
+
+            quickPickList.appendChild(el);
+        });
+    }
+
+    quickPickOverlay.classList.add('active');
+}
+
+function closeQuickPickModal() {
+    quickPickOverlay.classList.remove('active');
+}
+
+// Manual Add Logic
+if (addNewContactBtn) {
+    addNewContactBtn.onclick = () => {
+        const isHidden = newContactForm.classList.toggle('hidden');
+        addNewContactBtn.classList.toggle('active', !isHidden);
+        if (!isHidden) document.getElementById('newContactName').focus();
+    };
+}
+
+if (saveNewContactBtn) {
+    saveNewContactBtn.onclick = () => {
+        const nameInput = document.getElementById('newContactName');
+        const emailInput = document.getElementById('newContactEmail');
+        const name = nameInput.value.trim();
+        const email = emailInput.value.trim();
+
+        if (!email.includes('@')) {
+            if (window.showToast) showToast('Please enter a valid email', 'error');
+            return;
+        }
+
+        saveContact(email, name);
+        nameInput.value = '';
+        emailInput.value = '';
+        newContactForm.classList.add('hidden');
+        addNewContactBtn.classList.remove('active');
+        openQuickPick('contacts'); // Refresh list
+        if (window.showToast) showToast('Contact saved!', 'success');
+    };
+}
+
+if (closeQuickPick) closeQuickPick.onclick = closeQuickPickModal;
+if (quickPickOverlay) {
+    quickPickOverlay.onclick = (e) => {
+        if (e.target === quickPickOverlay) closeQuickPickModal();
+    };
+}
+
+// Update existing button listeners
+if (addContactBtn) {
+    addContactBtn.onclick = (e) => {
+        e.preventDefault();
+        openQuickPick('contacts');
+    };
+}
+
+if (addListBtn) {
+    addListBtn.onclick = (e) => {
+        e.preventDefault();
+        openQuickPick('lists');
+    };
+}
+
+// Hook into email send to save history
+emailForm.addEventListener('submit', () => {
+    const primary = document.getElementById('recipientEmail').value.trim();
+    const tags = Array.from(document.querySelectorAll('.recipient-tag')).map(t => t.dataset.email);
+    const all = [primary, ...tags].filter(Boolean);
+
+    if (all.length > 0) {
+        all.forEach(email => saveContact(email));
+        if (all.length > 1) saveRecentList(all);
+    }
+});
+
+
+
+// ============================================================
+// TAB NAVIGATION
 // ============================================================
 
 document.addEventListener('click', e => {
     const tabBtn = e.target.closest('.tab-btn');
     if (tabBtn) {
         const tab = tabBtn.dataset.tab;
-        
-        // Update button states
         document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
         tabBtn.classList.add('active');
-        
-        // Update pane visibility
         document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
         const activePane = document.querySelector(`.tab-pane[data-pane="${tab}"]`);
         if (activePane) activePane.classList.add('active');
@@ -382,9 +798,13 @@ document.addEventListener('click', e => {
 // ============================================================
 
 copyBtn.addEventListener('click', () => {
+    if (!shareLink.value) return;
     shareLink.select();
-    navigator.clipboard.writeText(shareLink.value);
+    navigator.clipboard.writeText(shareLink.value).catch(() => {
+        document.execCommand('copy');
+    });
     copyBtnText.textContent = 'Copied!';
+    if (window.showToast) showToast('Link copied to clipboard!', 'success');
     setTimeout(() => { copyBtnText.textContent = 'Copy'; }, 2000);
 });
 
@@ -400,45 +820,65 @@ emailForm.addEventListener('submit', async (e) => {
         ? `${currentFileList.length} Files Bundle`
         : currentFileList[0].name;
 
-    sendEmailBtn.innerHTML = 'Sending...';
-    sendEmailBtn.disabled = true;
+    const sendBtn  = document.getElementById('sendEmailBtn');
+    const sendText = document.getElementById('sendEmailBtnText');
+
+    // Gather all recipients
+    const primaryRecipient = document.getElementById('recipientEmail').value.trim();
+    const tagRecipients    = Array.from(document.querySelectorAll('.recipient-tag'))
+        .map(t => t.dataset.email)
+        .filter(Boolean);
+    const allRecipients    = [primaryRecipient, ...tagRecipients].filter(Boolean);
+
+    if (allRecipients.length === 0) { if (window.showToast) showToast('Please enter at least one recipient.', 'error'); return; }
+
+    // Optional fields
+    const senderEmail = (document.getElementById('senderEmail')?.value  || '').trim();
+    const senderName  = (document.getElementById('senderName')?.value   || '').trim();
+    const subject     = (document.getElementById('emailSubject')?.value || '').trim();
+    const message     = (document.getElementById('emailMessage')?.value || '').trim();
+
+    sendBtn.disabled = true;
+    if (sendText) sendText.textContent = 'Sending...';
 
     try {
         const backendUrl = window.BACKEND_URL || window.location.origin;
-        const response = await fetch(`${backendUrl}/api/send-email`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                shareUrl: currentShareUrl,
-                recipientEmail: document.getElementById('recipientEmail').value,
-                senderEmail: document.getElementById('senderEmail').value,
-                fileName: emailFileName
-            })
-        });
+        // Send to each recipient (server handles one at a time)
+        const promises = allRecipients.map(recipient =>
+            fetch(`${backendUrl}/api/send-email`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    shareUrl:       currentShareUrl,
+                    recipientEmail: recipient,
+                    senderEmail,
+                    senderName,
+                    subject,
+                    message,
+                    fileName:       emailFileName
+                })
+            }).then(r => r.json())
+        );
 
-        const data = await response.json();
+        const results = await Promise.all(promises);
+        const allOk   = results.every(r => r.success);
 
-        if (data.success) {
-            sendEmailBtn.innerHTML = '✓ Sent!';
+        if (allOk) {
+            if (sendText) sendText.textContent = '✓ Sent!';
+            if (window.showToast) showToast(`Email sent to ${allRecipients.length} recipient${allRecipients.length > 1 ? 's' : ''}!`, 'success');
         } else {
-            throw new Error(data.error);
+            throw new Error('One or more emails failed to send');
         }
 
         setTimeout(() => {
-            sendEmailBtn.innerHTML = `
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                    <polyline points="22,6 12,13 2,6"></polyline>
-                </svg>
-                <span>Send Email</span>
-            `;
-            sendEmailBtn.disabled = false;
-        }, 2000);
+            if (sendText) sendText.textContent = 'Send Invitation';
+            sendBtn.disabled = false;
+        }, 2500);
 
     } catch (error) {
-        sendEmailBtn.innerHTML = 'Error';
-        sendEmailBtn.disabled = false;
-        alert('Failed to send email.');
+        if (sendText) sendText.textContent = 'Error';
+        sendBtn.disabled = false;
+        if (window.showToast) showToast('Failed to send email.', 'error');
     }
 });
 
@@ -448,28 +888,26 @@ emailForm.addEventListener('submit', async (e) => {
 
 resetBtn.addEventListener('click', () => {
     fileInput.value = '';
-    progressBar.style.width = '0%';
+    if (progressBar) progressBar.style.width = '0%';
     if (progressPercent) progressPercent.textContent = '';
     currentShareUrl = null;
-    currentRoomId = null;
+    currentRoomId   = null;
     currentFileList = [];
-    peerCountEl.textContent = '';
-    peerCountEl.style.display = 'none';
-    
+    _pendingReconnect = null;
+
+    if (peerCountEl) { peerCountEl.textContent = ''; peerCountEl.style.display = 'none'; }
+
     const dtlsVersionEl = document.getElementById('p2pDtlsVersion');
     if (dtlsVersionEl) dtlsVersionEl.classList.remove('active');
 
-    if (webrtc) {
-        webrtc.disconnect();
-        webrtc = null;
-    }
+    if (webrtc) { webrtc.disconnect(); webrtc = null; }
 
     showState('upload');
     loadActiveSessions();
 });
 
 // ============================================================
-// DRAG PREVENTION
+// DRAG PREVENTION (full-page)
 // ============================================================
 
 ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
@@ -480,8 +918,8 @@ resetBtn.addEventListener('click', () => {
 // LIGHTBOX
 // ============================================================
 
-const lightbox = document.getElementById('lightbox');
-const lightboxImg = document.getElementById('lightboxImg');
+const lightbox     = document.getElementById('lightbox');
+const lightboxImg  = document.getElementById('lightboxImg');
 const closeLightbox = document.getElementById('closeLightbox');
 
 function openLightbox(src) {
@@ -490,15 +928,10 @@ function openLightbox(src) {
 }
 
 if (closeLightbox) {
-    closeLightbox.addEventListener('click', () => {
-        lightbox.classList.add('hidden');
-    });
+    closeLightbox.addEventListener('click', () => { lightbox.classList.add('hidden'); });
 }
-
 if (lightbox) {
     lightbox.addEventListener('click', (e) => {
-        if (e.target === lightbox) {
-            lightbox.classList.add('hidden');
-        }
+        if (e.target === lightbox) lightbox.classList.add('hidden');
     });
 }

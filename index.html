@@ -7,10 +7,13 @@
     <title>DROPZONE - P2P Secure File Sharing</title>
     <meta name="description"
         content="Share files directly between browsers using WebRTC with DTLS 1.3 encryption. No server storage, completely private.">
-    <link rel="stylesheet" href="styles.css?v=13">
+    <link rel="stylesheet" href="styles.css?v=17">
 </head>
 
 <body>
+    <!-- Ambient isometric grid (animated via CSS) -->
+    <div class="iso-grid" aria-hidden="true"></div>
+
     <div class="container">
         <!-- Main Card -->
         <div class="card" id="mainCard">
@@ -18,11 +21,13 @@
             <div class="header">
                 <div class="header-content">
                     <div>
-                        <h1 class="logo">DROPZONE</h1>
+                        <h1 class="logo" id="animatedLogo" aria-label="DROPZONE">
+                            <span class="logo-letter" style="--i:0">D</span><span class="logo-letter" style="--i:1">R</span><span class="logo-letter" style="--i:2">O</span><span class="logo-letter" style="--i:3">P</span><span class="logo-letter" style="--i:4">Z</span><span class="logo-letter" style="--i:5">O</span><span class="logo-letter" style="--i:6">N</span><span class="logo-letter" style="--i:7">E</span>
+                        </h1>
                         <p class="subtitle">P2P secure file sharing • DTLS 1.3</p>
                     </div>
                     <button id="resetBtn" class="reset-btn hidden">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2">
                             <line x1="18" y1="6" x2="6" y2="18"></line>
                             <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -37,32 +42,44 @@
                 <div id="uploadState" class="state active">
                     <div class="drop-zone" id="dropZone">
                         <div class="drop-zone-content">
-                            <div class="icon-container" id="uploadIcon">
-                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    stroke-width="2">
-                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                    <polyline points="17 8 12 3 7 8"></polyline>
-                                    <line x1="12" y1="3" x2="12" y2="15"></line>
-                                </svg>
+                            <!-- Icon wrapper — orbit ring lives here, outside icon-container -->
+                            <div class="icon-wrapper" id="uploadIcon">
+                                <!-- The three spinning rings -->
+                                <div class="icon-orbit-ring"></div>
+
+                                <!-- The visible icon box -->
+                                <div class="icon-container icon-upload">
+                                    <svg class="animated-icon upload-svg" width="42" height="42" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                        <defs>
+                                            <linearGradient id="iconGrad" x1="0" y1="0" x2="1" y2="1">
+                                                <stop offset="0%" stop-color="#3b82f6"/>
+                                                <stop offset="100%" stop-color="#6366f1"/>
+                                            </linearGradient>
+                                        </defs>
+                                        <path class="icon-path-base" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke="url(#iconGrad)"></path>
+                                        <polyline class="icon-path-arrow" points="17 8 12 3 7 8" stroke="url(#iconGrad)"></polyline>
+                                        <line class="icon-path-stem" x1="12" y1="3" x2="12" y2="15" stroke="url(#iconGrad)"></line>
+                                    </svg>
+                                </div>
                             </div>
 
                             <div class="drop-zone-text">
                                 <h2>Drag and drop files here</h2>
-                                <p class="info-text" style="margin-bottom: 24px;">Direct P2P transfer • No size limit • DTLS 1.3 encrypted</p>
+                                <p class="info-text">Direct P2P transfer • No size limit • DTLS 1.3 encrypted</p>
                             </div>
 
                             <input type="file" id="fileInput" hidden multiple>
-                            <label for="fileInput" class="browse-btn" style="margin-top: 10px;">Browse Files</label>
+                            <label for="fileInput" class="browse-btn" id="browseBtn">Browse Files</label>
                         </div>
                     </div>
                 </div>
 
-                <!-- STATE 2: CONNECTING (brief) -->
+                <!-- STATE 2: CONNECTING -->
                 <div id="uploadingState" class="state">
                     <div class="file-info">
                         <div class="file-icon">
-                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="1.5">
                                 <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
                                 <polyline points="13 2 13 9 20 9"></polyline>
                             </svg>
@@ -82,6 +99,14 @@
                             <div class="progress-bar" id="progressBar"></div>
                         </div>
                     </div>
+
+                    <!-- Animated connecting dots -->
+                    <div style="display:flex;align-items:center;gap:12px;margin-top:24px;opacity:0.6;font-size:13px;">
+                        <div class="connecting-dots">
+                            <span></span><span></span><span></span>
+                        </div>
+                        <span style="font-family:'Space Mono',monospace;">Establishing connection...</span>
+                    </div>
                 </div>
 
                 <!-- STATE 3: SHARING OPTIONS -->
@@ -89,7 +114,7 @@
                     <!-- File Info + P2P Status -->
                     <div class="file-info success">
                         <div class="file-icon success">
-                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                 stroke-width="2">
                                 <polyline points="20 6 9 17 4 12"></polyline>
                             </svg>
@@ -106,7 +131,7 @@
                         <span class="p2p-label" id="p2pLabel">P2P Active — Waiting for receivers</span>
                         <span class="p2p-peers" id="peerCount"></span>
                         <span class="p2p-dtls-version" id="p2pDtlsVersion">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                                 <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                             </svg>
@@ -119,26 +144,28 @@
                         <p class="info-text">Choose a sharing method below</p>
                     </div>
 
-                    <!-- RE-IMPLEMENTED TAB NAVIGATION -->
+                    <!-- TAB NAVIGATION -->
                     <div class="tab-nav">
-                        <button class="tab-btn active" data-tab="link">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        <button class="tab-btn active" data-tab="link" id="tabLink">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
                             </svg>
                             Link
                         </button>
-                        <button class="tab-btn" data-tab="email">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <button class="tab-btn" data-tab="email" id="tabEmail">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
                                 <polyline points="22,6 12,13 2,6"></polyline>
                             </svg>
                             Email
                         </button>
-                        <button class="tab-btn" data-tab="qr">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect>
-                                <rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect>
+                        <button class="tab-btn" data-tab="qr" id="tabQr">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="7" height="7"></rect>
+                                <rect x="14" y="3" width="7" height="7"></rect>
+                                <rect x="14" y="14" width="7" height="7"></rect>
+                                <rect x="3" y="14" width="7" height="7"></rect>
                             </svg>
                             QR Code
                         </button>
@@ -151,7 +178,7 @@
                             <div class="link-container">
                                 <input type="text" id="shareLink" class="share-input" readonly value="">
                                 <button id="copyBtn" class="copy-btn">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                                         <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
                                     </svg>
@@ -163,25 +190,85 @@
 
                         <!-- TAB B: EMAIL -->
                         <div class="tab-pane" data-pane="email">
-                            <form id="emailForm">
-                                <div class="form-group">
-                                    <label class="input-label">Recipient Email *</label>
-                                    <input type="email" id="recipientEmail" class="form-input" placeholder="friend@example.com" required>
+                            <form id="emailForm" class="email-form">
+
+                                <!-- Your email address -->
+                                <div class="email-field-row">
+                                    <div class="email-field-wrap">
+                                        <input type="email" id="senderEmail" class="email-input" placeholder="Your email address">
+                                        <button type="button" class="field-hint-btn" title="Used as the reply-to address">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                                        </button>
+                                    </div>
                                 </div>
-                                <button type="submit" id="sendEmailBtn" class="submit-btn" style="width: 100%;">
-                                    <span>Send Email Invitation</span>
+
+                                <!-- Sender name -->
+                                <div class="email-field-row">
+                                    <div class="email-field-wrap">
+                                        <input type="text" id="senderName" class="email-input" placeholder="Sender name (optional)">
+                                        <button type="button" class="field-hint-btn" title="Name shown to recipient">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Recipient(s) email -->
+                                <div class="email-field-row">
+                                    <div class="email-field-wrap recipient-wrap">
+                                        <input type="email" id="recipientEmail" class="email-input" placeholder="Recipient(s) email" required>
+                                        <button type="button" class="recipient-chevron" id="recipientChevron" title="Add multiple recipients">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+                                        </button>
+                                    </div>
+                                    <button type="button" class="recipient-action-btn" id="addContactBtn" title="Add from contacts">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                                    </button>
+                                    <button type="button" class="recipient-action-btn" id="addListBtn" title="Add from list">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                                    </button>
+                                </div>
+
+                                <!-- Multi-recipient tags area (hidden by default) -->
+                                <div id="extraRecipientsArea" class="extra-recipients hidden">
+                                    <div class="recipients-tags" id="recipientsTags"></div>
+                                    <input type="email" id="addRecipientInput" class="email-input" placeholder="Add another recipient...">
+                                </div>
+
+                                <!-- Subject -->
+                                <div class="email-field-row">
+                                    <div class="email-field-wrap">
+                                        <input type="text" id="emailSubject" class="email-input" placeholder="Subject (optional)">
+                                        <button type="button" class="field-hint-btn" title="Custom email subject">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Message -->
+                                <div class="email-field-row">
+                                    <textarea id="emailMessage" class="email-input email-textarea" placeholder="Your message (optional)" rows="3"></textarea>
+                                </div>
+
+                                <!-- Send button -->
+                                <button type="submit" id="sendEmailBtn" class="submit-btn email-send-btn">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <line x1="22" y1="2" x2="11" y2="13"/>
+                                        <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                                    </svg>
+                                    <span id="sendEmailBtnText">Send Invitation</span>
                                 </button>
+
                             </form>
                         </div>
 
                         <!-- TAB C: QR CODE -->
                         <div class="tab-pane" data-pane="qr">
-                            <div class="qr-section" style="text-align: center;">
-                                <div class="qr-code-container" style="margin: 0 auto; background: white; padding: 12px; border-radius: 16px; width: fit-content; margin-bottom: 20px;">
+                            <div style="text-align:center;">
+                                <div class="qr-code-container">
                                     <div class="qr-code" id="qrCode"></div>
                                 </div>
                                 <p class="help-text">Scan with mobile to receive via P2P</p>
-                                <button id="downloadQrBtn" class="submit-btn">
+                                <button id="downloadQrBtn" class="submit-btn" style="margin-top:16px;">
                                     Download QR Image
                                 </button>
                             </div>
@@ -189,10 +276,10 @@
                     </div>
                 </div>
 
-                <!-- PERSISTENT ACTIVE SESSIONS (Always visible if active) -->
+                <!-- PERSISTENT ACTIVE SESSIONS -->
                 <div id="activeSessionsPanel" class="active-sessions hidden">
                     <h3>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="1 4 1 10 7 10"></polyline>
                             <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
                         </svg>
@@ -205,16 +292,49 @@
         </div>
     </div>
 
+    <!-- Quick Pick Picker (Contacts/Lists) -->
+    <div id="quickPickOverlay" class="quick-pick-overlay">
+        <div class="quick-pick-modal">
+            <div class="quick-pick-header">
+                <h3 id="quickPickTitle">Select Contact</h3>
+                <div class="quick-pick-header-actions">
+                    <button id="addNewContactBtn" class="add-new-btn" title="Add New Contact">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                    </button>
+                    <button id="closeQuickPick" class="close-quick-pick" title="Close">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <!-- Hidden Inline Form to Add Contact -->
+            <div id="newContactForm" class="new-contact-form hidden">
+                <input type="text" id="newContactName" placeholder="Name" class="email-input small">
+                <input type="email" id="newContactEmail" placeholder="Email" class="email-input small">
+                <button id="saveNewContactBtn" class="submit-btn small">Save</button>
+            </div>
+            <div id="quickPickList" class="quick-pick-list">
+                <!-- Items populated by JS -->
+            </div>
+        </div>
+    </div>
+
     <!-- Lightbox -->
     <div id="lightbox" class="lightbox hidden">
         <span id="closeLightbox">&times;</span>
         <img class="lightbox-content" id="lightboxImg">
     </div>
 
-    <!-- Socket.IO + WebRTC Scripts -->
+    <!-- Scripts -->
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-    <script src="webrtc.js?v=13"></script>
-    <script src="script.js?v=10"></script>
+    <script src="webrtc.js?v=17"></script>
+    <script src="animations.js?v=17"></script>
+    <script src="script.js?v=17"></script>
     <!-- Backend configuration for hosting -->
     <script>
         window.BACKEND_URL = window.location.origin;

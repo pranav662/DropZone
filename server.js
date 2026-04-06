@@ -179,34 +179,59 @@ createTransporter();
 
 app.post('/api/send-email', async (req, res) => {
     try {
-        const { shareUrl, recipientEmail, senderEmail, fileName } = req.body;
+        const { shareUrl, recipientEmail, senderEmail, senderName, subject, message, fileName } = req.body;
 
         if (!shareUrl || !recipientEmail) {
             return res.status(400).json({ error: 'Missing required fields' });
         }
 
+        const displayName = senderName || (senderEmail ? senderEmail.split('@')[0] : 'Someone');
+        const emailSubject = subject || `${displayName} shared a file with you: ${fileName || 'Download'}`;
+        const customMessage = message
+            ? `<p style="color:#475569;font-size:15px;line-height:1.6;margin:0 0 20px;">"${message}"</p>`
+            : '';
+
         const mailOptions = {
-            from: senderEmail || process.env.SMTP_USER,
+            from: senderEmail ? `"${displayName}" <${senderEmail}>` : (process.env.SMTP_USER || 'noreply@dropzone.app'),
+            replyTo: senderEmail || undefined,
             to: recipientEmail,
-            subject: `File shared with you: ${fileName || 'Download'}`,
+            subject: emailSubject,
             html: `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                    <h2 style="color: #0f172a;">You've received a file!</h2>
-                    <p style="color: #475569; font-size: 16px;">
-                        ${senderEmail ? `${senderEmail} has` : 'Someone has'} shared a file with you via P2P.
-                    </p>
-                    <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                        <p style="margin: 0; color: #64748b; font-size: 14px;">FILE NAME</p>
-                        <p style="margin: 10px 0 0 0; color: #0f172a; font-size: 18px; font-weight: bold;">
-                            ${fileName || 'Shared File'}
+                <div style="font-family:'Outfit',Arial,sans-serif;max-width:560px;margin:0 auto;background:#020617;border-radius:20px;overflow:hidden;">
+                    <!-- Header -->
+                    <div style="background:linear-gradient(135deg,#1e293b 0%,#0f172a 100%);padding:40px 40px 30px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.07);">
+                        <h1 style="font-size:28px;font-weight:700;color:#fff;letter-spacing:-1px;margin:0;">DROPZONE</h1>
+                        <p style="color:#64748b;font-size:13px;margin:8px 0 0;font-family:monospace;">P2P Secure File Transfer</p>
+                    </div>
+                    <!-- Body -->
+                    <div style="padding:36px 40px;">
+                        <h2 style="color:#f8fafc;font-size:20px;margin:0 0 12px;">You've received a file! 📦</h2>
+                        <p style="color:#94a3b8;font-size:15px;line-height:1.6;margin:0 0 20px;">
+                            <strong style="color:#e2e8f0;">${displayName}</strong> has shared a file with you via DropZone P2P.
+                        </p>
+                        ${customMessage}
+                        <!-- File card -->
+                        <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:18px 22px;margin:0 0 28px;display:flex;align-items:center;gap:14px;">
+                            <div style="width:44px;height:44px;background:rgba(59,130,246,0.12);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                <span style="font-size:22px;">📄</span>
+                            </div>
+                            <div>
+                                <p style="margin:0;color:#f8fafc;font-weight:600;font-size:15px;">${fileName || 'Shared File'}</p>
+                                <p style="margin:4px 0 0;color:#64748b;font-size:12px;font-family:monospace;">Direct P2P transfer</p>
+                            </div>
+                        </div>
+                        <!-- CTA -->
+                        <a href="${shareUrl}" style="display:block;text-align:center;padding:16px 28px;background:linear-gradient(135deg,#3b82f6,#6366f1);color:white;text-decoration:none;border-radius:14px;font-weight:700;font-size:15px;margin-bottom:24px;">
+                            Download File →
+                        </a>
+                        <p style="color:#475569;font-size:13px;line-height:1.5;margin:0;">
+                            ⚡ <strong>Note:</strong> This is a P2P transfer — the sender must be online with their browser open for the download to work. The link expires in 24 hours.
                         </p>
                     </div>
-                    <a href="${shareUrl}" style="display: inline-block; padding: 14px 28px; background: #0f172a; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 20px 0;">
-                        Download File
-                    </a>
-                    <p style="color: #94a3b8; font-size: 14px; margin-top: 30px;">
-                        ⚡ This is a P2P transfer — the sender must be online for the download to work.
-                    </p>
+                    <!-- Footer -->
+                    <div style="padding:20px 40px;border-top:1px solid rgba(255,255,255,0.05);text-align:center;">
+                        <p style="color:#334155;font-size:12px;margin:0;">Sent via DropZone • No files stored on server • End-to-end encrypted</p>
+                    </div>
                 </div>
             `
         };
