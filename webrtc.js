@@ -20,6 +20,7 @@ class DropZoneWebRTC {
         this.onError = null;
         this.onPeerCount = null;
         this.onSecurityStats = null;
+        this.onSignalingStatus = null;
 
         // Receiver state
         this._receiveBuffers = new Map(); // peerId -> { chunks, metadata, received }
@@ -197,6 +198,7 @@ class DropZoneWebRTC {
 
             this.socket.on('connect', () => {
                 console.log('[Signal] Connected to signaling server');
+                if (this.onSignalingStatus) this.onSignalingStatus('online');
                 
                 // If this is a reconnection, re-associate the new socket ID with the room
                 if (this.role === 'sender' && this.roomId) {
@@ -208,8 +210,14 @@ class DropZoneWebRTC {
                 resolve();
             });
 
+            this.socket.on('disconnect', () => {
+                console.log('[Signal] Disconnected from signaling server');
+                if (this.onSignalingStatus) this.onSignalingStatus('offline');
+            });
+
             this.socket.on('connect_error', (err) => {
                 console.error('[Signal] Connection error:', err);
+                if (this.onSignalingStatus) this.onSignalingStatus('offline');
                 reject(err);
             });
 

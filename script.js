@@ -33,7 +33,11 @@ const sessionsList     = document.getElementById('sessionsList');
 let currentShareUrl  = null;
 let currentRoomId    = null;
 let currentFileList  = [];
-let webrtc           = null;
+let webrtc           = new DropZoneWebRTC();
+
+// Pre-warm signaling server connection on load
+webrtc.onSignalingStatus = updateGlobalSignaling;
+webrtc.connect(window.BACKEND_URL || 'https://dropzone-66yr.onrender.com').catch(()=>{});
 
 // Reconnection state
 let _pendingReconnect = null; // { roomId, shareUrl, filesMeta[] }
@@ -228,12 +232,14 @@ async function handleFilesNewRoom(files, displayName, totalSize) {
 // ============================================================
 
 async function _startWebRTC(backendUrl, roomId, files) {
-    if (webrtc) {
+    if (webrtc && webrtc.role) {
         webrtc.disconnect();
-        webrtc = null;
+        webrtc = new DropZoneWebRTC();
+        webrtc.onSignalingStatus = updateGlobalSignaling;
+    } else if (!webrtc) {
+        webrtc = new DropZoneWebRTC();
+        webrtc.onSignalingStatus = updateGlobalSignaling;
     }
-
-    webrtc = new DropZoneWebRTC();
 
     webrtc.onStatusChange = (status) => { updateP2PStatus(status); };
 
@@ -971,5 +977,99 @@ if (closeLightbox) {
 if (lightbox) {
     lightbox.addEventListener('click', (e) => {
         if (e.target === lightbox) lightbox.classList.add('hidden');
+    });
+}
+
+// ============================================================
+// GLOBAL HEADER / FOOTER & MODALS
+// ============================================================
+
+function updateGlobalSignaling(status) {
+    const dot = document.getElementById('globalSignalingDot');
+    const text = document.getElementById('globalSignalingText');
+    if (dot && text) {
+        if (status === 'online') {
+            dot.className = 'sig-dot online';
+            text.textContent = 'Online';
+        } else {
+            dot.className = 'sig-dot';
+            text.textContent = 'Offline';
+        }
+    }
+}
+
+const headerHomeBtn = document.getElementById('headerHomeBtn');
+if (headerHomeBtn) {
+    headerHomeBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        resetBtn.click();
+    });
+}
+
+// Generic Info Modal Content
+const modalData = {
+    'how': {
+        title: 'How DropZone Works',
+        body: `
+            <h3>Pure P2P Technology</h3>
+            <p>DropZone operates on WebRTC (Web Real-Time Communication) to establish a direct connection between your browser and the receiver's browser. Once the P2P connection is initialized, files flow directly without passing through our servers.</p>
+            <h3>Signaling vs. Storage</h3>
+            <p>We use a lightweight signaling server purely to execute the handshake (exchanging connection details) between peers. Once connected, the signaling server drops out. <strong>Your files are never stored, cached, or processed on our backend.</strong></p>
+        `
+    },
+    'faq': {
+        title: 'Frequently Asked Questions',
+        body: `
+            <h3>Is there a file size limit?</h3>
+            <p>DropZone itself does not enforce a limit, but browsers have memory constraints when handling massive files in RAM via WebRTC. For files over 10GB, we recommend ensuring you are on a desktop device with stable memory overhead.</p>
+            <h3>What happens if I close the tab?</h3>
+            <p>Since this is a strict peer-to-peer connection, if the sender closes their tab, the transfer breaks instantly. Both the sender and receiver must keep the application open until the transfer is 100% complete.</p>
+            <h3>Does it work on mobile?</h3>
+            <p>Yes, DropZone requires only a modern browser. However, strict firewalls or mobile hotspots with "AP Isolation" might block direct connections.</p>
+        `
+    },
+    'privacy': {
+        title: 'Privacy Policy',
+        body: `
+            <h3>No Server Storage</h3>
+            <p>Your privacy is our core principle. DropZone does not upload, process, or store any of your files. All byte transfers occur securely and directly between peers.</p>
+            <h3>Data Collection</h3>
+            <p>We do not collect identifiable personal data, contact lists, or file metadata. P2P Session IDs are generated ephemerally and discarded once the room closes.</p>
+            <h3>Contact Storage</h3>
+            <p>The "Contacts" and "History" features rely entirely on your browser's local storage (IndexedDB / localStorage). If you clear your browser data, your DropZone history is permanently deleted. We do not sync this to the cloud.</p>
+        `
+    },
+    'terms': {
+        title: 'Terms of Service',
+        body: `
+            <h3>Acceptable Use</h3>
+            <p>By using DropZone, you agree not to use the service to transfer illegal, malicious, or highly restricted materials. While we cannot monitor or inspect file contents due to the end-to-end encrypted nature of the platform, you remain fully responsible for the data you share.</p>
+            <h3>Encryption & Liability</h3>
+            <p>Transfers are protected via DTLS 1.3 encryption, ensuring the data stream cannot be intercepted. However, DropZone is provided "as is" with no warranties regarding uptime, delivery guarantees, or data integrity.</p>
+        `
+    }
+};
+
+window.openInfoModal = function(type) {
+    const data = modalData[type];
+    if (!data) return;
+    
+    document.getElementById('genericModalTitle').innerHTML = data.title;
+    document.getElementById('genericModalBody').innerHTML = data.body;
+    document.getElementById('genericModalOverlay').classList.add('active');
+};
+
+const closeGenericModal = document.getElementById('closeGenericModal');
+if (closeGenericModal) {
+    closeGenericModal.addEventListener('click', () => {
+        document.getElementById('genericModalOverlay').classList.remove('active');
+    });
+}
+const genericModalOverlay = document.getElementById('genericModalOverlay');
+if (genericModalOverlay) {
+    genericModalOverlay.addEventListener('click', (e) => {
+        if (e.target === genericModalOverlay) {
+            genericModalOverlay.classList.remove('active');
+        }
     });
 }
