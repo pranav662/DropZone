@@ -900,13 +900,13 @@ emailForm.addEventListener('submit', async (e) => {
         
         emailBody += `Note: This is a direct P2P transfer via DropZone. Please make sure to download within 24 hours while my browser tab is open.`;
 
-        const mailtoUrl = `mailto:${toList}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+        const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(toList)}&su=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
         
-        // Open native mail app
-        window.location.href = mailtoUrl;
+        // Open Gmail compose in a new tab
+        window.open(gmailUrl, '_blank');
 
-        if (sendText) sendText.textContent = '✓ Opened Mail App!';
-        if (window.showToast) showToast('Native mail application opened.', 'success');
+        if (sendText) sendText.textContent = '✓ Opened Gmail!';
+        if (window.showToast) showToast('Gmail compose window opened.', 'success');
 
         setTimeout(() => {
             if (sendText) sendText.textContent = 'Send Invitation';
