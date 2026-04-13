@@ -475,7 +475,7 @@ body::after {
     100% { transform: scale(1); opacity: 1; }
 }
 
-.file-details { flex: 1; min-width: 0; }
+.file-details { flex: 1; min-width: 0; overflow: hidden; }
 .file-details h3 { font-size: 16px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .file-details p { font-size: 13px; opacity: 0.6; margin-top: 4px; font-family: 'Space Mono', monospace; }
 
@@ -672,6 +672,10 @@ body::after {
     box-shadow: 0 6px 16px rgba(59, 130, 246, 0.2);
     position: relative;
     overflow: hidden;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
 }
 
 .copy-btn:hover, .submit-btn:hover {

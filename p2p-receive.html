@@ -4,74 +4,619 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Receiving File - DropZone P2P</title>
+    <title>Receiving File — DropZone P2P</title>
     <meta name="description" content="Receive files securely via WebRTC P2P transfer with DTLS 1.3 encryption.">
-    <link rel="stylesheet" href="/styles.css?v=15">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Outfit:wght@300;400;500;600;700&display=swap">
     <style>
-        /* Specific overrides for receiver page to ensure local layout consistency before global CSS loads */
-        .download-btn-sm {
-            padding: 8px 16px;
-            background: rgba(16, 185, 129, 0.1);
-            border: 1px solid rgba(16, 185, 129, 0.3);
-            color: #10b981;
-            border-radius: 10px;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
+        /* ============================================================
+           DESIGN TOKENS
+           ============================================================ */
+        :root {
+            --slate-950: #020617;
+            --slate-900: #0f172a;
+            --slate-800: #1e293b;
+            --slate-700: #334155;
+            --slate-400: #94a3b8;
+            --slate-50: #f8fafc;
+            --accent-primary: #3b82f6;
+            --accent-secondary: #6366f1;
+            --success-primary: #10b981;
+            --success-glow: rgba(16, 185, 129, 0.4);
+            --warning-primary: #f59e0b;
+            --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+            --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* ============================================================
+           RESET & BASE
+           ============================================================ */
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: #020617;
+            color: var(--slate-50);
+            min-height: 100vh;
             display: flex;
             align-items: center;
-            gap: 6px;
-        }
-
-        .download-btn-sm:hover {
-            background: #10b981;
-            color: white;
-            box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
-        }
-        
-        .download-all-btn {
-            width: 100%;
-            margin-bottom: 20px;
             justify-content: center;
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            box-shadow: 0 10px 20px rgba(16, 185, 129, 0.2);
+            padding: 24px;
+            overflow-x: hidden;
+            position: relative;
         }
 
-        .file-item-actions {
-            margin-left: auto;
+        /* Ambient background */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 60% 50% at 20% 20%, rgba(59,130,246,0.12) 0%, transparent 70%),
+                radial-gradient(ellipse 50% 60% at 80% 80%, rgba(99,102,241,0.10) 0%, transparent 70%),
+                radial-gradient(ellipse 40% 40% at 60% 10%, rgba(16,185,129,0.05) 0%, transparent 60%),
+                #020617;
+            animation: bgMorph 16s ease-in-out infinite alternate;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        @keyframes bgMorph {
+            0%   { transform: scale(1); }
+            100% { transform: scale(1.06); }
+        }
+
+        .container {
+            width: 100%;
+            max-width: 560px;
+            position: relative;
+            z-index: 1;
+            animation: entrance 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+        }
+
+        @keyframes entrance {
+            from { opacity: 0; transform: translateY(36px) scale(0.97); filter: blur(6px); }
+            to   { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+        }
+
+        /* ============================================================
+           CARD
+           ============================================================ */
+        .card {
+            background: rgba(15, 23, 42, 0.72);
+            backdrop-filter: blur(28px);
+            -webkit-backdrop-filter: blur(28px);
+            border: 1px solid rgba(255, 255, 255, 0.09);
+            border-radius: 32px;
+            box-shadow:
+                0 48px 120px -24px rgba(0, 0, 0, 0.95),
+                inset 0 1px 0 rgba(255, 255, 255, 0.06);
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Shimmer sweep */
+        .card::before {
+            content: '';
+            position: absolute;
+            top: -100%; left: -100%;
+            width: 300%; height: 300%;
+            background: linear-gradient(115deg, transparent 0%, rgba(255,255,255,0.018) 40%, rgba(255,255,255,0.04) 50%, rgba(255,255,255,0.018) 60%, transparent 100%);
+            animation: cardShimmer 8s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        @keyframes cardShimmer {
+            0%   { transform: translateX(-100%) translateY(-100%) rotate(30deg); }
+            40%  { transform: translateX(100%) translateY(100%) rotate(30deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(30deg); }
+        }
+
+        /* ============================================================
+           HEADER
+           ============================================================ */
+        .header {
+            padding: 32px 40px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            background: rgba(255, 255, 255, 0.01);
+            position: relative;
+            z-index: 1;
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .logo {
+            font-size: 26px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            background: linear-gradient(90deg, #fff 0%, #94a3b8 40%, #3b82f6 70%, #6366f1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            user-select: none;
+        }
+
+        .header-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(0,0,0,0.25);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 100px;
+            font-size: 12px;
+            font-family: 'Space Mono', monospace;
+            color: var(--slate-400);
+        }
+
+        .header-badge-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--success-primary);
+            box-shadow: 0 0 0 0 var(--success-glow);
+            animation: dotPulse 2s ease-out infinite;
             flex-shrink: 0;
-            display: none; /* Only show when file is ready */
         }
 
-        .file-item-actions.active {
-            display: block;
+        @keyframes dotPulse {
+            0%  { box-shadow: 0 0 0 0 rgba(16,185,129,0.6); }
+            70% { box-shadow: 0 0 0 8px rgba(16,185,129,0); }
+            100%{ box-shadow: 0 0 0 0 rgba(16,185,129,0); }
         }
 
-        .receiver-status-icon {
-            width: 90px;
-            height: 90px;
+        /* ============================================================
+           CONTENT
+           ============================================================ */
+        .content {
+            padding: 40px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ============================================================
+           STATUS SECTION
+           ============================================================ */
+        .status-section {
+            text-align: center;
+            margin-bottom: 36px;
+        }
+
+        /* Status icon circle */
+        .status-icon-wrap {
+            position: relative;
+            width: 96px;
+            height: 96px;
+            margin: 0 auto 24px;
+        }
+
+        .status-icon-ring {
+            position: absolute;
+            inset: -8px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            border-top-color: rgba(59,130,246,0.8);
+            border-right-color: rgba(99,102,241,0.5);
+            animation: ringSpinNormal 2.5s linear infinite;
+            pointer-events: none;
+        }
+
+        .status-icon {
+            width: 96px;
+            height: 96px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 30px;
-            font-size: 40px;
+            font-size: 38px;
             background: rgba(255, 255, 255, 0.03);
             border: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
-            transition: all 0.4s;
+            transition: all 0.5s var(--ease-smooth);
+            position: relative;
+            z-index: 1;
         }
-        
-        .receiver-status-icon.connecting { color: var(--warning-primary); border-color: rgba(245, 158, 11, 0.3); animation: status-pulse-amber 2s infinite; }
-        .receiver-status-icon.connected { color: var(--success-primary); border-color: rgba(16, 185, 129, 0.3); }
-        .receiver-status-icon.transferring { color: var(--accent-primary); border-color: rgba(59, 130, 246, 0.3); animation: status-pulse-blue 1.5s infinite; }
-        .receiver-status-icon.error { color: #ef4444; border-color: rgba(239, 68, 68, 0.3); }
 
-        @keyframes status-pulse-amber { 0%, 100% { transform: scale(1); border-color: rgba(245, 158, 11, 0.3); } 50% { transform: scale(1.05); border-color: rgba(245, 158, 11, 0.6); } }
-        @keyframes status-pulse-blue { 0%, 100% { transform: scale(1); border-color: rgba(59, 130, 246, 0.3); } 50% { transform: scale(1.05); border-color: rgba(59, 130, 246, 0.6); } }
+        @keyframes ringSpinNormal  { to { transform: rotate(360deg); } }
 
+        .status-icon.connecting {
+            color: var(--warning-primary);
+            border-color: rgba(245, 158, 11, 0.3);
+            box-shadow: 0 0 0 0 rgba(245,158,11,0.3);
+            animation: iconPulseAmber 2s infinite;
+        }
+        .status-icon.connected {
+            color: var(--success-primary);
+            border-color: rgba(16, 185, 129, 0.4);
+            box-shadow: 0 0 30px rgba(16,185,129,0.15);
+        }
+        .status-icon.transferring {
+            color: var(--accent-primary);
+            border-color: rgba(59,130,246,0.4);
+            box-shadow: 0 0 30px rgba(59,130,246,0.2);
+            animation: iconPulseBlue 1.5s infinite;
+        }
+        .status-icon.error {
+            color: #ef4444;
+            border-color: rgba(239,68,68,0.35);
+            box-shadow: 0 0 30px rgba(239,68,68,0.1);
+        }
+
+        @keyframes iconPulseAmber {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245,158,11,0.3); }
+            50% { transform: scale(1.04); box-shadow: 0 0 0 12px rgba(245,158,11,0); }
+        }
+        @keyframes iconPulseBlue {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 20px rgba(59,130,246,0.1); }
+            50% { transform: scale(1.03); box-shadow: 0 0 30px rgba(59,130,246,0.3); }
+        }
+
+        .status-title {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            background: linear-gradient(90deg, #fff, #cbd5e1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .status-sub {
+            font-family: 'Space Mono', monospace;
+            font-size: 12px;
+            color: var(--slate-400);
+            letter-spacing: 0.3px;
+        }
+
+        /* ============================================================
+           FILE LIST
+           ============================================================ */
+        #fileInfoSection {
+            margin-bottom: 24px;
+        }
+
+        .files-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+            gap: 12px;
+        }
+
+        .files-header-label {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--slate-400);
+        }
+
+        .files-count-badge {
+            background: rgba(59,130,246,0.12);
+            border: 1px solid rgba(59,130,246,0.25);
+            color: #93c5fd;
+            font-size: 11px;
+            font-family: 'Space Mono', monospace;
+            padding: 3px 10px;
+            border-radius: 999px;
+        }
+
+        /* Individual file card */
+        .file-card {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            align-items: center;
+            gap: 14px;
+            padding: 16px 20px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 18px;
+            margin-bottom: 10px;
+            transition: all 0.3s var(--ease-smooth);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .file-card::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: 3px;
+            background: linear-gradient(180deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 0 2px 2px 0;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .file-card:hover {
+            background: rgba(255,255,255,0.05);
+            border-color: rgba(255,255,255,0.12);
+            transform: translateY(-1px);
+        }
+
+        .file-card:hover::before {
+            opacity: 1;
+        }
+
+        /* File card — receiving state */
+        .file-card.receiving {
+            border-color: rgba(59,130,246,0.25);
+            background: rgba(59,130,246,0.04);
+        }
+
+        /* File card — ready state */
+        .file-card.ready {
+            border-color: rgba(16,185,129,0.25);
+            background: rgba(16,185,129,0.03);
+        }
+        .file-card.ready::before {
+            background: linear-gradient(180deg, var(--success-primary), #059669);
+            opacity: 1;
+        }
+
+        .file-card-icon {
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.08);
+            color: var(--slate-400);
+            flex-shrink: 0;
+            transition: all 0.3s;
+        }
+
+        .file-card.ready .file-card-icon {
+            background: rgba(16,185,129,0.12);
+            border-color: rgba(16,185,129,0.3);
+            color: var(--success-primary);
+        }
+
+        .file-card-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .file-card-name {
+            font-size: 14px;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 4px;
+        }
+
+        .file-card-meta {
+            font-size: 11px;
+            font-family: 'Space Mono', monospace;
+            color: var(--slate-400);
+        }
+
+        .file-card-action {
+            flex-shrink: 0;
+        }
+
+        .dl-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            background: rgba(16,185,129,0.12);
+            border: 1px solid rgba(16,185,129,0.3);
+            color: var(--success-primary);
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 600;
+            font-family: 'Outfit', sans-serif;
+            cursor: pointer;
+            transition: all 0.25s var(--ease-spring);
+            white-space: nowrap;
+        }
+
+        .dl-btn:hover {
+            background: var(--success-primary);
+            color: white;
+            box-shadow: 0 8px 20px rgba(16,185,129,0.35);
+            transform: translateY(-1px);
+        }
+
+        .dl-btn:active {
+            transform: translateY(0) scale(0.97);
+        }
+
+        /* Download All — primary CTA */
+        .dl-all-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            padding: 16px 24px;
+            background: linear-gradient(135deg, var(--success-primary) 0%, #059669 100%);
+            color: white;
+            border: none;
+            border-radius: 16px;
+            font-size: 15px;
+            font-weight: 700;
+            font-family: 'Outfit', sans-serif;
+            cursor: pointer;
+            box-shadow: 0 12px 30px rgba(16,185,129,0.3);
+            transition: all 0.25s var(--ease-spring);
+            margin-bottom: 24px;
+        }
+
+        .dl-all-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 18px 40px rgba(16,185,129,0.4);
+        }
+
+        .dl-all-btn:active {
+            transform: translateY(0) scale(0.98);
+        }
+
+        .dl-all-btn svg {
+            transition: transform 0.3s var(--ease-spring);
+        }
+
+        .dl-all-btn:hover svg {
+            transform: translateY(2px);
+        }
+
+        /* ============================================================
+           PROGRESS BAR
+           ============================================================ */
+        .progress-section {
+            background: rgba(0,0,0,0.2);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 20px;
+            padding: 20px 24px;
+            margin-bottom: 24px;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .progress-label {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--slate-400);
+        }
+
+        .progress-pct {
+            font-size: 13px;
+            font-family: 'Space Mono', monospace;
+            color: var(--accent-primary);
+            font-weight: 700;
+        }
+
+        .progress-bar-container {
+            height: 6px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 999px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary), var(--accent-primary));
+            background-size: 200% 100%;
+            transition: width 0.4s var(--ease-smooth);
+            box-shadow: 0 0 12px rgba(59,130,246,0.5);
+            animation: progressShimmer 2s linear infinite;
+        }
+
+        @keyframes progressShimmer {
+            0%   { background-position: 0% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        /* ============================================================
+           ERROR STATE
+           ============================================================ */
+        .error-section {
+            text-align: center;
+            padding: 24px;
+            background: rgba(239,68,68,0.05);
+            border: 1px solid rgba(239,68,68,0.15);
+            border-radius: 20px;
+            margin-top: 16px;
+        }
+
+        .error-msg {
+            color: #fca5a5;
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .retry-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 12px;
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            font-family: 'Outfit', sans-serif;
+            cursor: pointer;
+            transition: all 0.25s var(--ease-spring);
+        }
+
+        .retry-btn:hover {
+            background: rgba(255,255,255,0.1);
+            transform: translateY(-1px);
+        }
+
+        /* ============================================================
+           SECURITY FOOTER
+           ============================================================ */
+        .security-footer {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 20px;
+            background: rgba(0,0,0,0.2);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 100px;
+            margin-top: 32px;
+        }
+
+        .security-footer-icon {
+            color: var(--success-primary);
+            display: flex;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .security-footer-text {
+            font-size: 11px;
+            font-family: 'Space Mono', monospace;
+            color: var(--slate-400);
+            flex: 1;
+        }
+
+        /* ============================================================
+           UTILITIES
+           ============================================================ */
         .hidden { display: none !important; }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in {
+            animation: fadeInUp 0.4s var(--ease-smooth) both;
+        }
+
+        /* ============================================================
+           RESPONSIVE
+           ============================================================ */
+        @media (max-width: 560px) {
+            .content  { padding: 28px 24px; }
+            .header   { padding: 24px; }
+            .file-card { padding: 14px 16px; gap: 12px; }
+            .file-card-icon { width: 38px; height: 38px; border-radius: 10px; }
+            .status-icon-wrap { width: 80px; height: 80px; }
+            .status-icon { width: 80px; height: 80px; font-size: 30px; }
+        }
     </style>
 </head>
 
@@ -81,25 +626,29 @@
             <!-- Header -->
             <div class="header">
                 <div class="header-content">
-                    <div>
-                        <h1 class="logo">DROPZONE</h1>
-                        <p class="subtitle">P2P SECURE TRANSFER • NO SERVER STORAGE</p>
+                    <h1 class="logo">DROPZONE</h1>
+                    <div class="header-badge">
+                        <span class="header-badge-dot"></span>
+                        <span>P2P Encrypted</span>
                     </div>
                 </div>
             </div>
 
             <div class="content">
-                <!-- Status -->
-                <div id="statusSection" style="text-align: center; margin-bottom: 40px;">
-                    <div class="receiver-status-icon connecting" id="statusIcon">⏳</div>
-                    <h2 id="statusText" style="margin-bottom: 8px;">Connecting to sender...</h2>
-                    <p id="statusSub" style="opacity: 0.6; font-size: 14px; font-family: 'Space Mono', monospace;">Negotiating secure P2P tunnel...</p>
+                <!-- Status Section -->
+                <div class="status-section" id="statusSection">
+                    <div class="status-icon-wrap">
+                        <div class="status-icon-ring" id="statusRing"></div>
+                        <div class="status-icon connecting" id="statusIcon">⏳</div>
+                    </div>
+                    <h2 class="status-title" id="statusText">Connecting to sender...</h2>
+                    <p class="status-sub" id="statusSub">Negotiating secure P2P tunnel</p>
                 </div>
 
-                <!-- Actions (Download All) -->
+                <!-- Download All Button -->
                 <div id="actionArea" class="hidden">
-                    <button id="downloadAllBtn" class="browse-btn download-all-btn">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <button class="dl-all-btn" id="downloadAllBtn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                             <polyline points="7 10 12 15 17 10"></polyline>
                             <line x1="12" y1="15" x2="12" y2="3"></line>
@@ -108,63 +657,78 @@
                     </button>
                 </div>
 
-                <!-- File List Area -->
+                <!-- File List -->
                 <div id="fileInfoSection" class="hidden">
+                    <div class="files-header">
+                        <span class="files-header-label">Files</span>
+                        <span class="files-count-badge" id="filesCountBadge">0 files</span>
+                    </div>
                     <div id="filesList"></div>
                 </div>
 
                 <!-- Progress Bar -->
-                <div id="progressSection" class="hidden" style="margin-top: 30px; background: rgba(0,0,0,0.2); padding: 20px; border-radius: 20px;">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px;">
-                        <span id="progressLabel" style="font-weight: 500;">Receiving data...</span>
-                        <span id="progressPct" style="font-family: 'Space Mono', monospace; color: var(--accent-primary);">0%</span>
+                <div id="progressSection" class="progress-section hidden">
+                    <div class="progress-header">
+                        <span class="progress-label" id="progressLabel">Receiving data...</span>
+                        <span class="progress-pct" id="progressPct">0%</span>
                     </div>
                     <div class="progress-bar-container">
-                        <div class="progress-bar" id="progressFill" style="width: 0%;"></div>
+                        <div class="progress-bar-fill" id="progressFill" style="width: 0%"></div>
                     </div>
                 </div>
 
-                <!-- Error area -->
-                <div id="errorSection" class="hidden" style="text-align: center; margin-top: 20px;">
-                    <p id="errorText" style="color: #fca5a5; margin-bottom: 20px;"></p>
-                    <button class="browse-btn" style="background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.1);" onclick="location.reload()">Retry Connection</button>
+                <!-- Error Section -->
+                <div id="errorSection" class="error-section hidden">
+                    <p class="error-msg" id="errorText"></p>
+                    <button class="retry-btn" onclick="location.reload()">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="23 4 23 10 17 10"></polyline>
+                            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                        </svg>
+                        Retry Connection
+                    </button>
                 </div>
 
                 <!-- Security Footer -->
-                <div class="p2p-status" id="securityBadge" style="margin-top: 40px; margin-bottom: 0;">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                    </svg>
-                    <span id="securityBadgeText" style="font-size: 12px; font-family: 'Space Mono', monospace; opacity: 0.8;">End-to-end P2P encrypted • Verifying protocol...</span>
+                <div class="security-footer">
+                    <div class="security-footer-icon">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                    </div>
+                    <span class="security-footer-text" id="securityBadgeText">End-to-end P2P encrypted • Verifying protocol...</span>
                 </div>
             </div>
         </div>
     </div>
 
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-    <script src="/webrtc.js?v=15"></script>
-    <script src="/animations.js?v=15"></script>
+    <script src="/webrtc.js?v=18"></script>
     <script>
         window.BACKEND_URL = window.location.origin;
-        
-        const roomId = window.location.pathname.split('/p2p/')[1] || window.location.search.split('?room=')[1];
-        const statusIcon = document.getElementById('statusIcon');
-        const statusText = document.getElementById('statusText');
-        const statusSub = document.getElementById('statusSub');
-        const fileInfoSection = document.getElementById('fileInfoSection');
-        const filesList = document.getElementById('filesList');
-        const progressSection = document.getElementById('progressSection');
-        const progressLabel = document.getElementById('progressLabel');
-        const progressPct = document.getElementById('progressPct');
-        const progressFill = document.getElementById('progressFill');
-        const actionArea = document.getElementById('actionArea');
-        const downloadAllBtn = document.getElementById('downloadAllBtn');
-        const errorSection = document.getElementById('errorSection');
-        const errorText = document.getElementById('errorText');
 
-        let webrtc = null;
+        const roomId = window.location.pathname.split('/p2p/')[1] || window.location.search.split('?room=')[1];
+
+        const statusIcon     = document.getElementById('statusIcon');
+        const statusRing     = document.getElementById('statusRing');
+        const statusText     = document.getElementById('statusText');
+        const statusSub      = document.getElementById('statusSub');
+        const fileInfoSection= document.getElementById('fileInfoSection');
+        const filesList      = document.getElementById('filesList');
+        const filesCountBadge= document.getElementById('filesCountBadge');
+        const progressSection= document.getElementById('progressSection');
+        const progressLabel  = document.getElementById('progressLabel');
+        const progressPct    = document.getElementById('progressPct');
+        const progressFill   = document.getElementById('progressFill');
+        const actionArea     = document.getElementById('actionArea');
+        const downloadAllBtn = document.getElementById('downloadAllBtn');
+        const errorSection   = document.getElementById('errorSection');
+        const errorText      = document.getElementById('errorText');
+
+        let webrtc   = null;
         let senderId = null;
+        let allFilesData = [];
 
         function formatFileSize(bytes) {
             if (bytes === 0) return '0 B';
@@ -174,35 +738,64 @@
             return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
         }
 
-        function setStatus(icon, text, sub, iconClass) {
+        function setStatus(icon, text, sub, cls) {
             statusIcon.textContent = icon;
-            statusIcon.className = 'receiver-status-icon ' + iconClass;
+            statusIcon.className   = 'status-icon ' + cls;
             statusText.textContent = text;
-            statusSub.textContent = sub;
+            statusSub.textContent  = sub;
+
+            // Speed up / slow down the ring depending on state
+            if (cls === 'transferring') {
+                statusRing.style.animationDuration = '0.8s';
+            } else if (cls === 'error') {
+                statusRing.style.opacity = '0.3';
+                statusRing.style.animationDuration = '4s';
+            } else {
+                statusRing.style.opacity = '1';
+                statusRing.style.animationDuration = '2.5s';
+            }
+        }
+
+        function getFileIcon(name) {
+            const ext = (name.split('.').pop() || '').toLowerCase();
+            if (['jpg','jpeg','png','gif','webp','svg','bmp'].includes(ext)) {
+                return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`;
+            }
+            if (['mp4','mov','avi','mkv','webm'].includes(ext)) {
+                return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>`;
+            }
+            if (['mp3','wav','flac','aac','ogg'].includes(ext)) {
+                return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>`;
+            }
+            if (['zip','rar','7z','tar','gz'].includes(ext)) {
+                return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>`;
+            }
+            // generic document
+            return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>`;
         }
 
         function updateFilesDisplay(files) {
+            allFilesData = files;
             fileInfoSection.classList.remove('hidden');
+            filesCountBadge.textContent = files.length === 1 ? '1 file' : `${files.length} files`;
+
             filesList.innerHTML = files.map((f, i) => `
-                <div class="file-info" id="file-${i}">
-                    <div class="file-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
-                            <polyline points="13 2 13 9 20 9"></polyline>
-                        </svg>
+                <div class="file-card fade-in" id="file-card-${i}" style="animation-delay:${i * 60}ms">
+                    <div class="file-card-icon" id="file-icon-${i}">
+                        ${getFileIcon(f.name)}
                     </div>
-                    <div class="file-details">
-                        <div style="font-weight: 600; font-size: 15px;">${f.name}</div>
-                        <div style="font-size: 12px; opacity: 0.6; font-family: 'Space Mono', monospace;">${formatFileSize(f.size)}</div>
+                    <div class="file-card-info">
+                        <div class="file-card-name" title="${f.name}">${f.name}</div>
+                        <div class="file-card-meta">${formatFileSize(f.size)}</div>
                     </div>
-                    <div class="file-item-actions" id="actions-${i}">
-                        <button class="download-btn-sm" onclick="downloadFile(${i})">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                <polyline points="7 10 12 15 17 10"></polyline>
-                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                    <div class="file-card-action" id="file-action-${i}">
+                        <button class="dl-btn hidden" id="dl-btn-${i}" onclick="downloadFile(${i})">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="7 10 12 15 17 10"/>
+                                <line x1="12" y1="15" x2="12" y2="3"/>
                             </svg>
-                            Download
+                            Save
                         </button>
                     </div>
                 </div>
@@ -227,15 +820,15 @@
                 return;
             }
 
+            // Initial room check
             try {
-                const backendUrl = window.BACKEND_URL;
-                const res = await fetch(`${backendUrl}/api/room/${roomId}`);
+                const res  = await fetch(`${window.BACKEND_URL}/api/room/${roomId}`);
                 const data = await res.json();
 
                 if (!data.active) {
-                    setStatus('❌', 'Share expired', 'This link is no longer available', 'error');
+                    setStatus('⏳', 'Share expired', 'This link is no longer available', 'error');
                     errorSection.classList.remove('hidden');
-                    errorText.textContent = 'This share session has ended.';
+                    errorText.textContent = 'This share session has ended or never started.';
                     return;
                 }
 
@@ -247,8 +840,8 @@
             }
 
             webrtc = new window.DropZoneWebRTC();
-            
-            // Re-capture senderId when offer arrives
+
+            // Capture senderId when offer arrives
             const originalOnOffer = webrtc._onOffer.bind(webrtc);
             webrtc._onOffer = async (data) => {
                 senderId = data.senderId;
@@ -268,43 +861,43 @@
                         progressSection.classList.remove('hidden');
                         break;
                     case 'complete':
-                        setStatus('✅', 'Ready!', 'File(s) transferred successfully', 'connected');
+                        setStatus('✅', 'Transfer Complete', 'All files received successfully', 'connected');
                         progressFill.style.width = '100%';
-                        progressPct.textContent = '100%';
-                        progressLabel.textContent = 'Transfer Complete!';
+                        progressPct.textContent  = '100%';
+                        progressLabel.textContent= 'Transfer complete!';
                         actionArea.classList.remove('hidden');
-                        
-                        // Activate all individual download buttons
-                        document.querySelectorAll('.file-item-actions').forEach(el => el.classList.add('active'));
+                        // Reveal per-file download buttons
+                        document.querySelectorAll('[id^="dl-btn-"]').forEach(btn => btn.classList.remove('hidden'));
+                        document.querySelectorAll('[id^="file-card-"]').forEach(card => card.classList.add('ready'));
                         break;
                     case 'sender-offline':
-                        setStatus('⏸️', 'Sender Offline', 'Waiting for sender to return...', 'error');
+                        setStatus('⏸️', 'Sender Offline', 'Waiting for sender to reconnect...', 'error');
                         break;
                     case 'error':
-                        setStatus('❌', 'Connection failed', 'Please try again or check network', 'error');
+                        setStatus('❌', 'Connection failed', 'Please retry or check your network', 'error');
                         errorSection.classList.remove('hidden');
                         break;
                 }
             };
-            
+
             webrtc.onSecurityStats = (stats) => {
-                const badgeText = document.getElementById('securityBadgeText');
-                if (badgeText) {
-                    badgeText.innerHTML = `Verified <strong style="color:white">${stats.version}</strong> • E2E Encrypted • Direct P2P`;
-                }
+                const el = document.getElementById('securityBadgeText');
+                if (el) el.innerHTML = `Verified <strong style="color:#fff">${stats.version}</strong> • E2E Encrypted • Direct P2P`;
             };
 
             webrtc.onProgress = (info) => {
                 const pct = Math.round(info.progress);
-                progressFill.style.width = pct + '%';
-                progressPct.textContent = pct + '%';
+                progressFill.style.width  = pct + '%';
+                progressPct.textContent   = pct + '%';
                 progressLabel.textContent = `Receiving ${info.fileName}...`;
             };
 
             webrtc.onFileReceived = (file) => {
-                // Single file ready - can show its button earlier if desired
-                const actionBtn = document.getElementById(`actions-${file.fileIndex}`);
-                if (actionBtn) actionBtn.classList.add('active');
+                // Mark individual file card ready
+                const card = document.getElementById(`file-card-${file.fileIndex}`);
+                const btn  = document.getElementById(`dl-btn-${file.fileIndex}`);
+                if (card) card.classList.add('ready');
+                if (btn)  btn.classList.remove('hidden');
             };
 
             webrtc.onError = (msg) => {
@@ -314,9 +907,6 @@
 
             try {
                 await webrtc.connect(window.BACKEND_URL);
-                if (webrtc.socket) {
-                    console.log('[Receive] Signaling connected to', window.BACKEND_URL);
-                }
                 await webrtc.joinRoom(roomId);
             } catch (e) {
                 setStatus('❌', 'Connection failed', e.message, 'error');
