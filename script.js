@@ -37,7 +37,7 @@ let webrtc           = new DropZoneWebRTC();
 
 // Pre-warm signaling server connection on load
 webrtc.onSignalingStatus = updateGlobalSignaling;
-webrtc.connect(window.BACKEND_URL || 'https://dropzone-66yr.onrender.com').catch(()=>{});
+webrtc.connect(window.BACKEND_URL || window.location.origin).catch(()=>{});
 
 // Reconnection state
 let _pendingReconnect = null; // { roomId, shareUrl, filesMeta[] }

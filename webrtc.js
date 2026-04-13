@@ -207,7 +207,10 @@ class DropZoneWebRTC {
                 this.socket.disconnect();
             }
 
-            this.socket = io(serverUrl || window.location.origin);
+            this.socket = io(serverUrl || window.location.origin, {
+                transports: ['websocket'],
+                reconnectionAttempts: 5
+            });
 
             this.socket.on('connect', () => {
                 console.log('[Signal] Connected to signaling server');
