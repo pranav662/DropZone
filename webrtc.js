@@ -197,6 +197,14 @@ class DropZoneWebRTC {
 
             this.socket.on('connect', () => {
                 console.log('[Signal] Connected to signaling server');
+                
+                // If this is a reconnection, re-associate the new socket ID with the room
+                if (this.role === 'sender' && this.roomId) {
+                    this.socket.emit('create-room', { roomId: this.roomId });
+                } else if (this.role === 'receiver' && this.roomId) {
+                    this.socket.emit('join-room', { roomId: this.roomId });
+                }
+                
                 resolve();
             });
 

@@ -809,6 +809,44 @@ copyBtn.addEventListener('click', () => {
 });
 
 // ============================================================
+// SOCIAL QUICK SHARE
+// ============================================================
+
+const btnWhatsappShare = document.getElementById('btnWhatsappShare');
+const btnNearbyShare = document.getElementById('btnNearbyShare');
+
+if (btnWhatsappShare) {
+    btnWhatsappShare.addEventListener('click', () => {
+        if (!currentShareUrl) return;
+        const text = `I've shared a file with you via DropZone P2P. Download here: ${currentShareUrl}`;
+        const waUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
+        window.open(waUrl, '_blank');
+    });
+}
+
+if (btnNearbyShare) {
+    btnNearbyShare.addEventListener('click', async () => {
+        if (!currentShareUrl) return;
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: 'DropZone P2P Share',
+                    text: 'I\'ve shared a file with you via DropZone P2P.',
+                    url: currentShareUrl
+                });
+                if (window.showToast) showToast('Shared successfully!', 'success');
+            } catch (err) {
+                if (err.name !== 'AbortError') {
+                    if (window.showToast) showToast('Sharing failed', 'error');
+                }
+            }
+        } else {
+            if (window.showToast) showToast('Web Share not supported on this browser', 'default');
+        }
+    });
+}
+
+// ============================================================
 // EMAIL
 // ============================================================
 
@@ -839,36 +877,26 @@ emailForm.addEventListener('submit', async (e) => {
     const message     = (document.getElementById('emailMessage')?.value || '').trim();
 
     sendBtn.disabled = true;
-    if (sendText) sendText.textContent = 'Sending...';
+    if (sendText) sendText.textContent = 'Preparing native mail...';
 
     try {
-        const backendUrl = window.BACKEND_URL || window.location.origin;
-        // Send to each recipient (server handles one at a time)
-        const promises = allRecipients.map(recipient =>
-            fetch(`${backendUrl}/api/send-email`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    shareUrl:       currentShareUrl,
-                    recipientEmail: recipient,
-                    senderEmail,
-                    senderName,
-                    subject,
-                    message,
-                    fileName:       emailFileName
-                })
-            }).then(r => r.json())
-        );
-
-        const results = await Promise.all(promises);
-        const allOk   = results.every(r => r.success);
-
-        if (allOk) {
-            if (sendText) sendText.textContent = '✓ Sent!';
-            if (window.showToast) showToast(`Email sent to ${allRecipients.length} recipient${allRecipients.length > 1 ? 's' : ''}!`, 'success');
-        } else {
-            throw new Error('One or more emails failed to send');
+        const toList = allRecipients.join(',');
+        const emailSubject = subject || `I've shared a file with you: ${emailFileName}`;
+        let emailBody = `Download Link: ${currentShareUrl}\n\n`;
+        
+        if (message) {
+            emailBody += `${message}\n\n`;
         }
+        
+        emailBody += `Note: This is a direct P2P transfer via DropZone. Please make sure to download within 24 hours while my browser tab is open.`;
+
+        const mailtoUrl = `mailto:${toList}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+        
+        // Open native mail app
+        window.location.href = mailtoUrl;
+
+        if (sendText) sendText.textContent = '✓ Opened Mail App!';
+        if (window.showToast) showToast('Native mail application opened.', 'success');
 
         setTimeout(() => {
             if (sendText) sendText.textContent = 'Send Invitation';
@@ -878,7 +906,7 @@ emailForm.addEventListener('submit', async (e) => {
     } catch (error) {
         if (sendText) sendText.textContent = 'Error';
         sendBtn.disabled = false;
-        if (window.showToast) showToast('Failed to send email.', 'error');
+        if (window.showToast) showToast('Failed to open mail app.', 'error');
     }
 });
 
