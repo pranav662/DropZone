@@ -891,6 +891,7 @@
             </a>
         </div>
         <div class="header-right">
+            <button class="header-link" onclick="openInfoModal('about')">About Us</button>
             <button class="header-link" onclick="openInfoModal('how')">How it Works</button>
             <button class="header-link" onclick="openInfoModal('faq')">FAQ</button>
             <div class="signaling-indicator" title="Signaling Server Status">
@@ -1036,11 +1037,12 @@
         </div>
     </div>
 
+    <script>
+        window.BACKEND_URL = window.location.origin;
+    </script>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script src="/webrtc.js?v=19"></script>
     <script>
-        window.BACKEND_URL = window.location.origin;
-
         const roomId = window.location.pathname.split('/p2p/')[1] || window.location.search.split('?room=')[1];
 
         const statusIcon      = document.getElementById('statusIcon');
@@ -1295,6 +1297,16 @@
 
         // Generic Info Modal Content
         const modalData = {
+            'about': {
+                title: 'About Us',
+                body: `
+                    <p><strong>Name:</strong> Pranav Shrinivas Shingne</p>
+                    <p><strong>Education:</strong> SY B.TECH - CE</p>
+                    <p><strong>Roll No:</strong> DW-139</p>
+                    <p><strong>Mentor:</strong> Prof. Sachin Shinde</p>
+                    <p><strong>Name of the organization:</strong> G.H Raisoni International Skill Tech University Pune.</p>
+                `
+            },
             'how': {
                 title: 'How DropZone Works',
                 body: `
@@ -1373,7 +1385,7 @@
         <div class="footer-right">
             <button class="footer-link" onclick="openInfoModal('privacy')">Privacy Policy</button>
             <button class="footer-link" onclick="openInfoModal('terms')">Terms of Service</button>
-            <a href="mailto:support@dropzone.local" class="footer-link">Contact</a>
+            <a href="mailto:shingnepranav662@gmail.com" class="footer-link">Contact</a>
         </div>
     </footer>
 

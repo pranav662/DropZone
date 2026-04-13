@@ -1008,6 +1008,16 @@ if (headerHomeBtn) {
 
 // Generic Info Modal Content
 const modalData = {
+    'about': {
+        title: 'About Us',
+        body: `
+            <p><strong>Name:</strong> Pranav Shrinivas Shingne</p>
+            <p><strong>Education:</strong> SY B.TECH - CE</p>
+            <p><strong>Roll No:</strong> DW-139</p>
+            <p><strong>Mentor:</strong> Prof. Sachin Shinde</p>
+            <p><strong>Name of the organization:</strong> G.H Raisoni International Skill Tech University Pune.</p>
+        `
+    },
     'how': {
         title: 'How DropZone Works',
         body: `

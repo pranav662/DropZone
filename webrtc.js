@@ -194,6 +194,19 @@ class DropZoneWebRTC {
     // ============================================================
     connect(serverUrl) {
         return new Promise((resolve, reject) => {
+            if (this.socket && this.socket.connected) {
+                if (this.role === 'sender' && this.roomId) {
+                    this.socket.emit('create-room', { roomId: this.roomId });
+                } else if (this.role === 'receiver' && this.roomId) {
+                    this.socket.emit('join-room', { roomId: this.roomId });
+                }
+                return resolve();
+            }
+
+            if (this.socket) {
+                this.socket.disconnect();
+            }
+
             this.socket = io(serverUrl || window.location.origin);
 
             this.socket.on('connect', () => {
