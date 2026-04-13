@@ -1251,11 +1251,43 @@
                 if (el) el.innerHTML = `Verified <strong style="color:#fff">${stats.version}</strong> • E2E Encrypted • Direct P2P`;
             };
 
+            let transferState = {
+                lastTime: 0,
+                lastBytes: 0,
+                speedStr: ''
+            };
+
             webrtc.onProgress = (info) => {
                 const pct = Math.round(info.progress);
+                const now = Date.now();
+                
+                if (info.bytesTransferred && transferState.lastTime) {
+                    const dt = now - transferState.lastTime;
+                    if (dt > 500) {
+                        const db = info.bytesTransferred - transferState.lastBytes;
+                        const speedBps = (db / dt) * 1000;
+                        
+                        if (speedBps > 1024 * 1024) {
+                            transferState.speedStr = (speedBps / (1024 * 1024)).toFixed(1) + ' MB/s';
+                        } else if (speedBps > 1024) {
+                            transferState.speedStr = (speedBps / 1024).toFixed(0) + ' KB/s';
+                        } else {
+                            transferState.speedStr = Math.round(speedBps) + ' B/s';
+                        }
+                        
+                        transferState.lastTime = now;
+                        transferState.lastBytes = info.bytesTransferred;
+                    }
+                } else if (info.bytesTransferred) {
+                    transferState.lastTime = now;
+                    transferState.lastBytes = info.bytesTransferred;
+                }
+
+                const speedText = transferState.speedStr ? ` (${transferState.speedStr})` : '';
+
                 progressFill.style.width  = pct + '%';
                 progressPct.textContent   = pct + '%';
-                progressLabel.textContent = `Receiving ${info.fileName}...`;
+                progressLabel.textContent = `Receiving ${info.fileName}...${speedText}`;
             };
 
             webrtc.onFileReceived = (file) => {

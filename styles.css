@@ -2194,9 +2194,12 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
 }
 
 @media (max-width: 640px) {
-    .global-header { padding: 16px 20px; flex-direction: column; gap: 12px; position: absolute; }
-    .global-footer { padding: 16px 20px; flex-direction: column; gap: 12px; position: absolute; }
+    .global-header { padding: 16px 20px; flex-direction: column; gap: 12px; position: static; background: rgba(15,23,42,0.8); backdrop-filter: blur(10px); }
+    .global-footer { padding: 16px 20px; flex-direction: column; gap: 12px; position: static; background: rgba(15,23,42,0.8); backdrop-filter: blur(10px); width: 100%; box-sizing: border-box; margin-top: auto; }
     .header-right, .footer-left, .footer-right { flex-wrap: wrap; justify-content: center; }
+    body { display: flex; flex-direction: column; min-height: 100vh; justify-content: flex-start; }
+    .container { margin: auto 0; padding: 24px 16px; }
+    .card { margin-top: 10px; margin-bottom: 10px; }
 }
 
 /* ============================================================

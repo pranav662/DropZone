@@ -131,6 +131,17 @@
                             <label for="fileInput" class="browse-btn" id="browseBtn">Browse Files</label>
                         </div>
                     </div>
+                    
+                    <!-- NEW: Staging Queue -->
+                    <div id="stagingQueue" class="hidden" style="margin-top: 16px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 16px;">
+                        <h3 style="font-size: 14px; margin-bottom: 12px; color: var(--slate-300);">Files Ready to Share</h3>
+                        <div id="stagedFilesList" style="display: flex; flex-direction: column; gap: 8px; max-height: 180px; overflow-y: auto; padding-right: 4px;">
+                            <!-- Dynamically injected via script.js -->
+                        </div>
+                        <button id="generateLinkBtn" class="browse-btn" style="margin-top: 16px; width: 100%; border-radius: 8px; font-weight: 600; padding: 12px;">
+                            Generate Share Link
+                        </button>
+                    </div>
                 </div>
 
                 <!-- STATE 2: CONNECTING -->

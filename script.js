@@ -93,9 +93,95 @@ fileInput.addEventListener('change', (e) => {
 // HANDLE FILES — Create P2P Room OR Reconnect
 // ============================================================
 
-async function handleFiles(files) {
-    currentFileList = Array.from(files);
+let stagedFilesArray = [];
 
+async function handleFiles(files) {
+    // Add new files to staging
+    const newFiles = Array.from(files);
+    stagedFilesArray = [...stagedFilesArray, ...newFiles];
+    
+    renderStagingQueue();
+}
+
+function renderStagingQueue() {
+    const queueEl = document.getElementById('stagingQueue');
+    const listEl = document.getElementById('stagedFilesList');
+    const btn = document.getElementById('generateLinkBtn');
+    
+    if (stagedFilesArray.length === 0) {
+        queueEl.classList.add('hidden');
+        return;
+    }
+    
+    queueEl.classList.remove('hidden');
+    listEl.innerHTML = '';
+    
+    let totalSize = 0;
+    
+    stagedFilesArray.forEach((file, index) => {
+        totalSize += file.size;
+        
+        const item = document.createElement('div');
+        item.style.display = 'flex';
+        item.style.justifyContent = 'space-between';
+        item.style.alignItems = 'center';
+        item.style.padding = '8px 12px';
+        item.style.background = 'rgba(255,255,255,0.03)';
+        item.style.borderRadius = '8px';
+        item.style.border = '1px solid rgba(255,255,255,0.08)';
+        
+        const details = document.createElement('div');
+        details.style.overflow = 'hidden';
+        
+        const name = document.createElement('p');
+        name.textContent = file.name;
+        name.style.margin = '0 0 2px 0';
+        name.style.fontSize = '13px';
+        name.style.whiteSpace = 'nowrap';
+        name.style.overflow = 'hidden';
+        name.style.textOverflow = 'ellipsis';
+        name.style.color = '#e2e8f0';
+        
+        const size = document.createElement('p');
+        size.textContent = formatFileSize(file.size);
+        size.style.margin = '0';
+        size.style.fontSize = '11px';
+        size.style.color = '#94a3b8';
+        size.style.fontFamily = 'monospace';
+        
+        details.appendChild(name);
+        details.appendChild(size);
+        
+        const removeBtn = document.createElement('button');
+        removeBtn.innerHTML = '✕';
+        removeBtn.style.background = 'none';
+        removeBtn.style.border = 'none';
+        removeBtn.style.color = '#f87171';
+        removeBtn.style.cursor = 'pointer';
+        removeBtn.style.padding = '4px 8px';
+        removeBtn.style.borderRadius = '4px';
+        removeBtn.style.fontSize = '14px';
+        
+        removeBtn.onclick = () => {
+            stagedFilesArray.splice(index, 1);
+            renderStagingQueue();
+        };
+        
+        item.appendChild(details);
+        item.appendChild(removeBtn);
+        listEl.appendChild(item);
+    });
+    
+    btn.textContent = `Share ${stagedFilesArray.length} File${stagedFilesArray.length !== 1 ? 's' : ''} (${formatFileSize(totalSize)})`;
+}
+
+document.getElementById('generateLinkBtn').addEventListener('click', actuallyCreateRoom);
+
+async function actuallyCreateRoom() {
+    if (stagedFilesArray.length === 0) return;
+    
+    currentFileList = [...stagedFilesArray];
+    
     const totalSize = currentFileList.reduce((sum, f) => sum + f.size, 0);
     const displayName = currentFileList.length === 1
         ? currentFileList[0].name
@@ -252,9 +338,40 @@ async function _startWebRTC(backendUrl, roomId, files) {
         }
     };
 
+    let transferState = {
+        lastTime: 0,
+        lastBytes: 0,
+        speedStr: ''
+    };
+
     webrtc.onProgress = (info) => {
         const pct = Math.round(info.progress);
-        if (p2pLabel) p2pLabel.textContent = `Sending ${info.fileName}… ${pct}%`;
+        const now = Date.now();
+        
+        if (info.bytesTransferred && transferState.lastTime) {
+            const dt = now - transferState.lastTime;
+            if (dt > 500) { // update speed every 500ms
+                const db = info.bytesTransferred - transferState.lastBytes;
+                const speedBps = (db / dt) * 1000;
+                
+                if (speedBps > 1024 * 1024) {
+                    transferState.speedStr = (speedBps / (1024 * 1024)).toFixed(1) + ' MB/s';
+                } else if (speedBps > 1024) {
+                    transferState.speedStr = (speedBps / 1024).toFixed(0) + ' KB/s';
+                } else {
+                    transferState.speedStr = Math.round(speedBps) + ' B/s';
+                }
+                
+                transferState.lastTime = now;
+                transferState.lastBytes = info.bytesTransferred;
+            }
+        } else if (info.bytesTransferred) {
+            transferState.lastTime = now;
+            transferState.lastBytes = info.bytesTransferred;
+        }
+
+        const speedText = transferState.speedStr ? ` (${transferState.speedStr})` : '';
+        if (p2pLabel) p2pLabel.textContent = `Sending ${info.fileName}… ${pct}%${speedText}`;
         if (progressBar) progressBar.style.width = Math.min(pct, 100) + '%';
         if (progressPercent) progressPercent.textContent = pct + '%';
     };

@@ -356,7 +356,9 @@ class DropZoneWebRTC {
                             fileName: file.name,
                             chunkIndex,
                             totalChunks,
-                            progress: totalProgress
+                            progress: totalProgress,
+                            bytesTransferred: offset,
+                            totalBytes: file.size
                         });
                     }
                 }
@@ -511,7 +513,9 @@ class DropZoneWebRTC {
                     fileIndex: state.metadata.fileIndex,
                     totalFiles: state.metadata.totalFiles,
                     progress: totalProgress,
-                    fileProgress: Math.min(fileProgress, 100)
+                    fileProgress: Math.min(fileProgress, 100),
+                    bytesTransferred: state.received,
+                    totalBytes: state.metadata.size
                 });
             }
         }
