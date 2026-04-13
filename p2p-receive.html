@@ -1037,9 +1037,7 @@
         </div>
     </div>
 
-    <script>
-        window.BACKEND_URL = window.location.origin;
-    </script>
+
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script src="/webrtc.js?v=19"></script>
     <script>
@@ -1192,7 +1190,8 @@
             }
 
             try {
-                const res  = await fetch(`${window.BACKEND_URL}/api/room/${roomId}`);
+                const backendUrl = window.BACKEND_URL || 'https://dropzone-66yr.onrender.com';
+                const res  = await fetch(`${backendUrl}/api/room/${roomId}`);
                 const data = await res.json();
 
                 if (!data.active) {
@@ -1286,7 +1285,7 @@
                     }
                 };
 
-                await webrtc.connect(window.BACKEND_URL);
+                await webrtc.connect(window.BACKEND_URL || 'https://dropzone-66yr.onrender.com');
                 await webrtc.joinRoom(roomId);
             } catch (e) {
                 setStatus('error', 'Connection failed', e.message);
