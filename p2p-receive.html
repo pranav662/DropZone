@@ -101,17 +101,22 @@
             background-size: 128px 128px;
         }
 
-        /* Grid lines */
-        .grid-overlay {
+        /* Grid lines — animated to match sender */
+        .iso-grid {
             position: fixed;
             inset: 0;
             z-index: 0;
             pointer-events: none;
             background-image:
-                linear-gradient(rgba(59,130,246,0.04) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(59,130,246,0.04) 1px, transparent 1px);
+                linear-gradient(rgba(59,130,246,0.035) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(59,130,246,0.035) 1px, transparent 1px);
             background-size: 48px 48px;
             mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 20%, transparent 80%);
+            animation: gridPan 24s linear infinite;
+        }
+        @keyframes gridPan {
+            from { background-position: 0 0; }
+            to   { background-position: 48px 48px; }
         }
 
         /* ============================================================
@@ -1266,6 +1271,7 @@
 
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script src="/webrtc.js?v=19"></script>
+    <script src="/animations.js?v=19"></script>
     <script src="https://unpkg.com/@lottiefiles/lottie-player@2.0.8/dist/lottie-player.js"></script>
     <script>
         const roomId = window.location.pathname.split('/p2p/')[1] || window.location.search.split('?room=')[1];
@@ -1345,7 +1351,7 @@
             statusRingOuter.style.animationDuration = dur;
             statusRingOuter.style.opacity = op;
 
-            if (state === 'complete') {
+            if (state === 'complete' || state === 'error' ) {
                 statusRingOuter.style.display = 'none';
                 document.querySelector('.status-ring-inner').style.display = 'none';
                 document.getElementById('newTransferBtn').style.display = 'block';
