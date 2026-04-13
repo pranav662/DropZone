@@ -1,38 +1,40 @@
-# DropZone: Modern File Sharing
+# DropZone: Modern P2P File Sharing
 
 ## Vision
 
-DropZone is an intuitive, secure file-sharing platform designed for seamless single and batch uploads. Users drop their files onto the web application, optionally secure them with a password, and distribute them anywhere via dynamically generated shareable URLs, QR codes, or platform-dispatched emails.
+DropZone is a high-performance, browser-based file-sharing application that enables direct, secure transfers without server-side bottlenecks. Built on WebRTC and DTLS 1.3, it bypasses cloud storage entirely, ensuring maximum privacy and speed.
 
 ## Core Directives
 
-1. **Security**: All files are forcibly encrypted on disk using AES-256-CBC, and automatically pruned after a 24-hour retention window.
-2. **Speed**: Upload processing and download streaming should add near-zero overhead.
-3. **Simplicity**: No required user accounts or complex onboarding to dispatch files; UI is singular and frictionless.
+1. **Security**: All transfers are secured via DTLS 1.3 end-to-end encryption. No files are ever stored on the server's disk; the server strictly facilitates signaling.
+2. **Speed**: Direct P2P data channels enable near-zero overhead and bypass traditional upload limits.
+3. **Simplicity**: No account requirement; the UI is frictionless and browser-native.
 
 ## Critical Requirements (Must-haves)
 
-- [x] Supports single and multi-file drag-and-drop or file pane uploads (max 100MB limit per request).
-- [x] Real-time file upload progression bars via XMLHttpRequests.
-- [x] Generates universal "Batch Links" and "Single Links".
-- [x] Dispatches HTML-styled template emails via mock/local network SMTP nodes.
-- [x] Presents QR Codes directly on the UI for downloading dynamically.
-- [x] Protects specific files or explicit file batches behind SHA-256 derived password schemas.
-- [x] Features internal cron or timed polling functions that physically and logically destruct expired files after 24 hours.
+- [x] Supports single and multi-file drag-and-drop or file pane uploads (No hard size limit due to P2P).
+- [x] Real-time transfer progression bars via RTCDataChannel buffering.
+- [x] Generates dynamic "P2P Room Links" for direct receipt.
+- [x] Dispatches HTML-styled professional email invitations with native `mailto:` fallback.
+- [x] Presents QR Codes for mobile-to-desktop or desktop-to-mobile P2P receipt.
+- [x] Uses ECDSA certificates for secure DTLS 1.3 handshakes.
+- [x] In-memory signaling rooms that auto-expire after 24 hours.
 
 ## Technical Foundations
 
-- Stack: Node.js, Express, MongoDB
-- Target Platforms: Standard Chromium / WebKit clients (Desktop, Mobile Web).
-- Data Persistence: Mongoose (Cloud/Atlas Mongo) mapping file metadata, `uploads/` folder housing `.enc` cryptograms.
+- **Engine:** WebRTC (RTCDataChannel), DTLS 1.3
+- **Signaling:** Node.js, Socket.io
+- **Frontend:** Vanilla JS, Glassmorphism CSS, Canvas API
+- **Persistence:** Transient In-Memory Signaling (No database requirement for transfers).
 
 ## Boundaries and Constraints
-- Native UI runs on Vanilla HTML/CSS/JS cleanly decoupled into root (`index.html`, `script.js`).
-- Framework usage (React, etc.) is disallowed unless explicitly requested or mandated for specific feature migrations.
-- File previews are constrained to familiar browser codecs (`image/*`, `application/pdf`, `video/*`, `audio/*`).
+- Native UI runs on Vanilla HTML/CSS/JS cleanly decoupled.
+- Framework usage is disallowed unless explicitly mandated.
+- Browser Support: Requires WebRTC-compliant browsers (Chromium, WebKit).
 
 ## Acceptance Criteria
-- End-user can establish a file drop, enforce password, download QR, and view encrypted file through provided URL seamlessly across sessions. Files appropriately expire within 24h.
+- End-user can establish a P2P room, share a link/QR/Email, and transfer files directly browser-to-browser with verified encryption and progress.
 
 ---
-**Status:** FINALIZED
+**Status:** FINALIZED (P2P Migration Complete)
+
