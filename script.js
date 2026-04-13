@@ -385,21 +385,21 @@ function loadActiveSessions() {
         return `
             <div class="session-item" data-room-id="${session.roomId}">
                 <div class="session-info">
-                    <span class="session-name" style="font-weight:600;font-size:14px;">${fileNames}</span>
-                    <span class="session-meta" style="display:block;font-size:12px;opacity:0.6;font-family:'Space Mono',monospace;margin-top:4px;">${formatFileSize(totalSize)} • ${ageText}</span>
+                    <span class="session-name">${fileNames}</span>
+                    <span class="session-meta">${formatFileSize(totalSize)} • ${ageText}</span>
                 </div>
                 <div class="session-actions">
                     <button class="reconnect-btn" onclick="reconnectSession('${session.roomId}')" title="Restore P2P Room">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="23 4 23 10 17 10"></polyline>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M23 4v6h-6"></path>
                             <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
                         </svg>
                         Restore
                     </button>
                     <button class="remove-btn" onclick="removeSessionUI('${session.roomId}')" title="Remove Share">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M18 6L6 18"></path>
+                            <path d="M6 6l12 12"></path>
                         </svg>
                     </button>
                 </div>
@@ -451,32 +451,42 @@ function _showReconnectModal(session, shareUrl) {
     overlay.className = 'reconnect-modal-overlay';
     overlay.innerHTML = `
         <div class="reconnect-modal">
-            <div style="font-size:48px;margin-bottom:20px;animation:iconFloat 3s ease-in-out infinite;">🔄</div>
+            <div class="reconnect-icon-box">
+                <svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <g class="logo-arrows-spin">
+                        <path d="M 40 14 A 18 18 0 0 1 42 30" stroke="#3b82f6" stroke-width="3" stroke-linecap="round" fill="none"/>
+                        <path d="M 16 42 A 18 18 0 0 1 14 26" stroke="#f97316" stroke-width="3" stroke-linecap="round" fill="none"/>
+                    </g>
+                    <rect x="20" y="17" width="16" height="22" rx="2.5" fill="rgba(59,130,246,0.15)" stroke="#3b82f6" stroke-width="1.5"/>
+                    <path d="M30 17 L30 23 L36 23" fill="rgba(59,130,246,0.2)" stroke="#3b82f6" stroke-width="1.2" stroke-linejoin="round"/>
+                </svg>
+            </div>
             <h3>Restore Session</h3>
-            <p>Re-select the same file(s) to reconnect to your existing P2P room.<br>Your share link will remain the same.</p>
+            <p>Re-select the same file(s) to reconnect to your existing P2P room. Your share link will remain active.</p>
 
             <div class="session-file-list">
                 ${session.files.map(f => `
-                    <div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(99,102,241,0.8)" stroke-width="2">
+                    <div class="session-file-row">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-opacity="0.6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
                             <polyline points="13 2 13 9 20 9"></polyline>
                         </svg>
-                        <p>${f.name} <span style="opacity:0.5;">(${formatFileSize(f.size)})</span></p>
+                        <span class="file-name">${f.name}</span>
+                        <span class="file-size">${formatFileSize(f.size)}</span>
                     </div>
                 `).join('')}
             </div>
 
             <div class="reconnect-modal-actions">
-                <button id="reconnectPickBtn" class="browse-btn" style="flex:1;justify-content:center;">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <button id="reconnectPickBtn" class="browse-btn" style="flex:1; justify-content:center;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                         <polyline points="17 8 12 3 7 8"></polyline>
                         <line x1="12" y1="3" x2="12" y2="15"></line>
                     </svg>
                     Select Files
                 </button>
-                <button id="reconnectCancelBtn" style="padding:16px 20px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:14px;color:var(--slate-400);cursor:pointer;font-weight:600;transition:all 0.2s;">
+                <button id="reconnectCancelBtn" class="cancel-modal-btn">
                     Cancel
                 </button>
             </div>
@@ -663,8 +673,8 @@ function openQuickPick(type) {
             el.style.animationDelay = `${index * 40}ms`;
 
             const icon = type === 'contacts'
-                ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`
-                : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>`;
+                ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`
+                : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>`;
 
             el.innerHTML = `
                 <div class="item-avatar">${icon}</div>
@@ -673,7 +683,7 @@ function openQuickPick(type) {
                     <span class="item-email">${type === 'contacts' ? item.email : item.emails.join(', ')}</span>
                 </div>
                 <button class="remove-item-btn" title="Remove">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
                 </button>
             `;
 

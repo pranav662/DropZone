@@ -1,6 +1,6 @@
 // ============================================================
-// DropZone Ambient Animations
-// Particles, tilt, ripple, morphing background
+// DropZone Ambient Animations — v2 Premium
+// Particles with glow, mouse interaction, tilt, ripple
 // ============================================================
 
 (function () {
@@ -12,34 +12,43 @@
     document.body.insertBefore(canvas, document.body.firstChild);
     const ctx = canvas.getContext('2d');
 
+    let mouseX = -1000, mouseY = -1000;
+    const MOUSE_RADIUS = 180;
+
     function resize() {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
     }
     resize();
     window.addEventListener('resize', resize);
+    window.addEventListener('mousemove', (e) => { mouseX = e.clientX; mouseY = e.clientY; });
+    window.addEventListener('mouseleave', ()  => { mouseX = -1000; mouseY = -1000; });
 
     const COLORS = [
-        'rgba(59,130,246,',   // blue
-        'rgba(99,102,241,',   // indigo
-        'rgba(16,185,129,',   // green
-        'rgba(148,163,184,',  // slate
+        { r: 59,  g: 130, b: 246 }, // blue
+        { r: 99,  g: 102, b: 241 }, // indigo
+        { r: 139, g: 92,  b: 246 }, // violet
+        { r: 16,  g: 185, b: 129 }, // emerald
+        { r: 148, g: 163, b: 184 }, // slate
     ];
 
     const particles = [];
-    const PARTICLE_COUNT = Math.min(80, Math.floor(window.innerWidth / 20));
+    const PARTICLE_COUNT = Math.min(90, Math.floor(window.innerWidth / 18));
+    const CONNECTION_DIST = 140;
 
     function randomParticle() {
         const color = COLORS[Math.floor(Math.random() * COLORS.length)];
+        const size = Math.random() * 1.6 + 0.5;
         return {
             x: Math.random() * canvas.width,
             y: Math.random() * canvas.height,
-            r: Math.random() * 1.5 + 0.4,
-            vx: (Math.random() - 0.5) * 0.35,
-            vy: (Math.random() - 0.5) * 0.25,
-            alpha: Math.random() * 0.5 + 0.1,
+            r: size,
+            baseR: size,
+            vx: (Math.random() - 0.5) * 0.3,
+            vy: (Math.random() - 0.5) * 0.22,
+            alpha: Math.random() * 0.45 + 0.15,
             color,
-            pulseSpeed: Math.random() * 0.02 + 0.005,
+            pulseSpeed: Math.random() * 0.018 + 0.006,
             pulseT: Math.random() * Math.PI * 2,
         };
     }
@@ -48,12 +57,9 @@
         particles.push(randomParticle());
     }
 
-    const CONNECTION_DIST = 130;
-
     function drawParticles() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Update + draw particles
         for (const p of particles) {
             p.x += p.vx;
             p.y += p.vy;
@@ -65,11 +71,38 @@
             if (p.y < -10) p.y = canvas.height + 10;
             if (p.y > canvas.height + 10) p.y = -10;
 
-            const alpha = p.alpha + Math.sin(p.pulseT) * 0.08;
+            // Mouse repulsion
+            const mdx = p.x - mouseX;
+            const mdy = p.y - mouseY;
+            const mDist = Math.sqrt(mdx * mdx + mdy * mdy);
+            if (mDist < MOUSE_RADIUS && mDist > 0) {
+                const force = (1 - mDist / MOUSE_RADIUS) * 1.8;
+                p.x += (mdx / mDist) * force;
+                p.y += (mdy / mDist) * force;
+                p.r = p.baseR + force * 0.5; // swell near mouse
+            } else {
+                p.r += (p.baseR - p.r) * 0.08; // ease back
+            }
 
+            const alpha = p.alpha + Math.sin(p.pulseT) * 0.1;
+            const a = Math.max(0, Math.min(1, alpha));
+            const { r, g, b } = p.color;
+
+            // Glow layer
+            if (p.r > 1) {
+                const grd = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 6);
+                grd.addColorStop(0, `rgba(${r},${g},${b},${a * 0.15})`);
+                grd.addColorStop(1, `rgba(${r},${g},${b},0)`);
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.r * 6, 0, Math.PI * 2);
+                ctx.fillStyle = grd;
+                ctx.fill();
+            }
+
+            // Core dot
             ctx.beginPath();
             ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-            ctx.fillStyle = p.color + Math.max(0, Math.min(1, alpha)) + ')';
+            ctx.fillStyle = `rgba(${r},${g},${b},${a})`;
             ctx.fill();
         }
 
@@ -82,12 +115,12 @@
                 const dy = a.y - b.y;
                 const dist = Math.sqrt(dx * dx + dy * dy);
                 if (dist < CONNECTION_DIST) {
-                    const alpha = (1 - dist / CONNECTION_DIST) * 0.12;
+                    const alpha = (1 - dist / CONNECTION_DIST) * 0.14;
                     ctx.beginPath();
                     ctx.moveTo(a.x, a.y);
                     ctx.lineTo(b.x, b.y);
                     ctx.strokeStyle = `rgba(99,102,241,${alpha})`;
-                    ctx.lineWidth = 0.8;
+                    ctx.lineWidth = 0.7;
                     ctx.stroke();
                 }
             }
@@ -104,26 +137,26 @@
         if (!dropZone) return;
 
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        svg.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;opacity:0.4;z-index:0;border-radius:24px;overflow:hidden;';
+        svg.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;opacity:0.35;z-index:0;border-radius:28px;overflow:hidden;';
         svg.setAttribute('aria-hidden', 'true');
 
         const lines = [
             { x1: '0%', y1: '20%', x2: '30%', y2: '0%',   delay: '0s'  },
-            { x1: '100%', y1: '80%', x2: '70%', y2: '100%', delay: '1s'  },
-            { x1: '10%', y1: '100%', x2: '40%', y2: '70%',  delay: '2s'  },
-            { x1: '90%', y1: '0%',   x2: '60%', y2: '30%',  delay: '0.5s'},
+            { x1: '100%', y1: '80%', x2: '70%', y2: '100%', delay: '1.2s'  },
+            { x1: '10%', y1: '100%', x2: '40%', y2: '70%',  delay: '2.4s'  },
+            { x1: '90%', y1: '0%',   x2: '60%', y2: '30%',  delay: '0.6s'},
         ];
 
         lines.forEach(l => {
             const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
             line.setAttribute('x1', l.x1); line.setAttribute('y1', l.y1);
             line.setAttribute('x2', l.x2); line.setAttribute('y2', l.y2);
-            line.setAttribute('stroke', 'rgba(59,130,246,0.3)');
+            line.setAttribute('stroke', 'rgba(59,130,246,0.35)');
             line.setAttribute('stroke-width', '1');
             line.setAttribute('stroke-dasharray', '60');
             line.setAttribute('stroke-dashoffset', '60');
 
-            line.style.animation = `lineFlow 3.5s ease-in-out ${l.delay} infinite`;
+            line.style.animation = `lineFlow 4s ease-in-out ${l.delay} infinite`;
             svg.appendChild(line);
         });
 
@@ -136,7 +169,6 @@
         const card = document.querySelector('.card');
         if (!card || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-        let raf;
         let targetX = 0, targetY = 0;
         let currentX = 0, currentY = 0;
 
@@ -144,8 +176,8 @@
             const rect = card.getBoundingClientRect();
             const cx = rect.left + rect.width / 2;
             const cy = rect.top + rect.height / 2;
-            targetX = -(e.clientY - cy) / rect.height * 4;
-            targetY = (e.clientX - cx) / rect.width * 4;
+            targetX = -(e.clientY - cy) / rect.height * 3.5;
+            targetY = (e.clientX - cx) / rect.width * 3.5;
         });
 
         card.addEventListener('mouseleave', () => {
@@ -153,14 +185,14 @@
         });
 
         function animate() {
-            currentX += (targetX - currentX) * 0.08;
-            currentY += (targetY - currentY) * 0.08;
+            currentX += (targetX - currentX) * 0.06;
+            currentY += (targetY - currentY) * 0.06;
 
             const shadow = `0 ${48 + currentX}px 120px -24px rgba(0,0,0,0.95)`;
-            card.style.transform = `perspective(1200px) rotateX(${currentX}deg) rotateY(${currentY}deg)`;
+            card.style.transform = `perspective(1400px) rotateX(${currentX}deg) rotateY(${currentY}deg)`;
             card.style.boxShadow = shadow;
 
-            raf = requestAnimationFrame(animate);
+            requestAnimationFrame(animate);
         }
         animate();
     }
@@ -176,30 +208,30 @@
             ripple.style.cssText = `
                 position:absolute;
                 border-radius:50%;
-                background:rgba(255,255,255,0.25);
+                background:rgba(255,255,255,0.22);
                 transform:scale(0);
-                animation:rippleAnim 0.6s linear;
-                width:120px;height:120px;
-                left:${x - 60}px;top:${y - 60}px;
+                animation:rippleAnim 0.55s ease-out;
+                width:140px;height:140px;
+                left:${x - 70}px;top:${y - 70}px;
                 pointer-events:none;
                 z-index:10;
             `;
             el.style.position = 'relative';
             el.style.overflow = 'hidden';
             el.appendChild(ripple);
-            setTimeout(() => ripple.remove(), 700);
+            setTimeout(() => ripple.remove(), 600);
         });
     }
 
-    // Inject ripple keyframes
+    // Inject keyframes
     const style = document.createElement('style');
     style.textContent = `
         @keyframes rippleAnim {
-            to { transform: scale(3); opacity: 0; }
+            to { transform: scale(3.5); opacity: 0; }
         }
         @keyframes lineFlow {
             0%   { stroke-dashoffset: 60; opacity: 0; }
-            20%  { opacity: 0.8; }
+            20%  { opacity: 0.7; }
             100% { stroke-dashoffset: -60; opacity: 0; }
         }
     `;
@@ -217,13 +249,13 @@
         }
 
         const icons = {
-            success: '✓',
-            error:   '✕',
-            default: '●',
+            success: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>`,
+            error:   `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`,
+            default: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>`,
         };
 
         toastEl.className = `toast ${type}`;
-        toastEl.innerHTML = `<span style="font-size:16px;">${icons[type] || icons.default}</span><span>${message}</span>`;
+        toastEl.innerHTML = `${icons[type] || icons.default}<span>${message}</span>`;
 
         clearTimeout(toastTimer);
         requestAnimationFrame(() => {
@@ -243,7 +275,7 @@
         const interval = setInterval(() => {
             el.textContent += text[i++];
             if (i >= text.length) clearInterval(interval);
-        }, 24);
+        }, 22);
     };
 
     // ─── INIT ALL ─────────────────────────────────────────────

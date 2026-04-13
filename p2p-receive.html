@@ -7,7 +7,7 @@
     <title>Receiving File — DropZone P2P</title>
     <meta name="description" content="Receive files securely via WebRTC P2P transfer with DTLS 1.3 encryption.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Outfit:wght@300;400;500;600;700&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Outfit:wght@300;400;500;600;700;900&display=swap">
     <style>
         /* ============================================================
            DESIGN TOKENS
@@ -18,14 +18,16 @@
             --slate-800: #1e293b;
             --slate-700: #334155;
             --slate-400: #94a3b8;
-            --slate-50: #f8fafc;
-            --accent-primary: #3b82f6;
+            --slate-50:  #f8fafc;
+            --accent-primary:   #3b82f6;
             --accent-secondary: #6366f1;
-            --success-primary: #10b981;
-            --success-glow: rgba(16, 185, 129, 0.4);
-            --warning-primary: #f59e0b;
+            --accent-violet:    #8b5cf6;
+            --success-primary:  #10b981;
+            --success-glow:     rgba(16,185,129,0.4);
+            --warning-primary:  #f59e0b;
+            --red-primary:      #ef4444;
             --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+            --ease-smooth: cubic-bezier(0.4, 0,   0.2, 1);
             --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
@@ -47,80 +49,160 @@
             position: relative;
         }
 
-        /* Ambient background */
-        body::before {
-            content: '';
+        /* ── Aurora Mesh Background ── */
+        .aurora-bg {
             position: fixed;
             inset: 0;
-            background:
-                radial-gradient(ellipse 60% 50% at 20% 20%, rgba(59,130,246,0.12) 0%, transparent 70%),
-                radial-gradient(ellipse 50% 60% at 80% 80%, rgba(99,102,241,0.10) 0%, transparent 70%),
-                radial-gradient(ellipse 40% 40% at 60% 10%, rgba(16,185,129,0.05) 0%, transparent 60%),
-                #020617;
-            animation: bgMorph 16s ease-in-out infinite alternate;
             z-index: 0;
             pointer-events: none;
+            overflow: hidden;
+        }
+        .aurora-bg::before {
+            content: '';
+            position: absolute;
+            width: 80vw; height: 80vw;
+            top: -30vw; left: -20vw;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(59,130,246,0.18) 0%, transparent 70%);
+            animation: auroraDrift1 18s ease-in-out infinite alternate;
+            filter: blur(60px);
+        }
+        .aurora-bg::after {
+            content: '';
+            position: absolute;
+            width: 70vw; height: 70vw;
+            bottom: -20vw; right: -10vw;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(99,102,241,0.16) 0%, transparent 70%);
+            animation: auroraDrift2 22s ease-in-out infinite alternate;
+            filter: blur(60px);
+        }
+        .aurora-orb {
+            position: absolute;
+            width: 50vw; height: 50vw;
+            top: 40%; left: 50%;
+            transform: translate(-50%,-50%);
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(16,185,129,0.08) 0%, transparent 65%);
+            animation: auroraDrift3 14s ease-in-out infinite alternate;
+            filter: blur(50px);
+            pointer-events: none;
+        }
+        @keyframes auroraDrift1 {
+            0%   { transform: translate(0,0) scale(1); }
+            100% { transform: translate(10vw, 8vw) scale(1.15); }
+        }
+        @keyframes auroraDrift2 {
+            0%   { transform: translate(0,0) scale(1.1); }
+            100% { transform: translate(-8vw, -10vw) scale(1); }
+        }
+        @keyframes auroraDrift3 {
+            0%   { transform: translate(-50%,-50%) scale(1); opacity: 0.6; }
+            100% { transform: translate(-50%,-48%) scale(1.2); opacity: 1; }
         }
 
-        @keyframes bgMorph {
-            0%   { transform: scale(1); }
-            100% { transform: scale(1.06); }
+        /* Noise texture overlay */
+        .noise-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.025;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+            background-size: 128px 128px;
         }
 
+        /* Grid lines */
+        .grid-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            background-image:
+                linear-gradient(rgba(59,130,246,0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(59,130,246,0.04) 1px, transparent 1px);
+            background-size: 48px 48px;
+            mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 20%, transparent 80%);
+        }
+
+        /* ============================================================
+           CONTAINER
+           ============================================================ */
         .container {
             width: 100%;
-            max-width: 560px;
+            max-width: 580px;
             position: relative;
             z-index: 1;
-            animation: entrance 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+            animation: entrance 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
         }
 
         @keyframes entrance {
-            from { opacity: 0; transform: translateY(36px) scale(0.97); filter: blur(6px); }
-            to   { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+            from { opacity: 0; transform: translateY(40px) scale(0.96); filter: blur(8px); }
+            to   { opacity: 1; transform: translateY(0)    scale(1);    filter: blur(0);   }
         }
 
         /* ============================================================
            CARD
            ============================================================ */
         .card {
-            background: rgba(15, 23, 42, 0.72);
-            backdrop-filter: blur(28px);
-            -webkit-backdrop-filter: blur(28px);
-            border: 1px solid rgba(255, 255, 255, 0.09);
-            border-radius: 32px;
+            background: rgba(13, 20, 40, 0.75);
+            backdrop-filter: blur(40px) saturate(180%);
+            -webkit-backdrop-filter: blur(40px) saturate(180%);
+            border: 1px solid rgba(255,255,255,0.10);
+            border-radius: 36px;
             box-shadow:
-                0 48px 120px -24px rgba(0, 0, 0, 0.95),
-                inset 0 1px 0 rgba(255, 255, 255, 0.06);
+                0 60px 140px -20px rgba(0,0,0,0.98),
+                0 0 0 1px rgba(255,255,255,0.04) inset,
+                0 1px 0 rgba(255,255,255,0.08) inset;
             overflow: hidden;
             position: relative;
         }
 
-        /* Shimmer sweep */
+        /* Gradient border accent */
         .card::before {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: 37px;
+            background: linear-gradient(135deg,
+                rgba(59,130,246,0.35) 0%,
+                transparent 40%,
+                transparent 60%,
+                rgba(99,102,241,0.20) 100%);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* Shimmer sweep */
+        .card::after {
             content: '';
             position: absolute;
             top: -100%; left: -100%;
             width: 300%; height: 300%;
-            background: linear-gradient(115deg, transparent 0%, rgba(255,255,255,0.018) 40%, rgba(255,255,255,0.04) 50%, rgba(255,255,255,0.018) 60%, transparent 100%);
-            animation: cardShimmer 8s ease-in-out infinite;
+            background: linear-gradient(115deg,
+                transparent 0%,
+                rgba(255,255,255,0.015) 40%,
+                rgba(255,255,255,0.035) 50%,
+                rgba(255,255,255,0.015) 60%,
+                transparent 100%);
+            animation: shimmer 10s ease-in-out infinite;
             pointer-events: none;
             z-index: 0;
         }
 
-        @keyframes cardShimmer {
+        @keyframes shimmer {
             0%   { transform: translateX(-100%) translateY(-100%) rotate(30deg); }
-            40%  { transform: translateX(100%) translateY(100%) rotate(30deg); }
-            100% { transform: translateX(100%) translateY(100%) rotate(30deg); }
+            40%  { transform: translateX(100%)  translateY(100%)  rotate(30deg); }
+            100% { transform: translateX(100%)  translateY(100%)  rotate(30deg); }
         }
 
         /* ============================================================
            HEADER
            ============================================================ */
         .header {
-            padding: 32px 40px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            background: rgba(255, 255, 255, 0.01);
+            padding: 28px 36px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            background: rgba(255,255,255,0.012);
             position: relative;
             z-index: 1;
         }
@@ -132,51 +214,94 @@
             gap: 12px;
         }
 
-        .logo {
-            font-size: 26px;
-            font-weight: 700;
+        /* ─── Logo Group ─── */
+        .logo-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* SVG Logo Mark — professional file-sharing icon */
+        .logo-mark {
+            width: 46px;
+            height: 46px;
+            flex-shrink: 0;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .logo-mark svg { width: 100%; height: 100%; }
+
+        .logo-arrows-spin {
+            animation: logoArrowsSpin 8s linear infinite;
+            transform-origin: 28px 28px;
+        }
+        @keyframes logoArrowsSpin { to { transform: rotate(360deg); } }
+
+        .logo-file-icon {
+            animation: logoFilePulse 3s ease-in-out infinite;
+        }
+        @keyframes logoFilePulse {
+            0%, 100% { opacity: 0.95; filter: drop-shadow(0 0 0 rgba(56,189,248,0)); }
+            50%       { opacity: 1;    filter: drop-shadow(0 0 5px rgba(56,189,248,0.6)); }
+        }
+
+        .logo-sparkle { animation: sparkleTwinkle 2.5s ease-in-out infinite; }
+        .logo-sparkle.s1 { animation-delay: 0s; }
+        .logo-sparkle.s2 { animation-delay: 0.8s; }
+        .logo-sparkle.s3 { animation-delay: 1.6s; }
+        @keyframes sparkleTwinkle {
+            0%, 100% { opacity: 0.3; transform: scale(0.6); }
+            50%       { opacity: 1;   transform: scale(1.4); }
+        }
+
+        .logo-text {
+            font-size: 22px;
+            font-weight: 800;
             letter-spacing: -0.5px;
-            background: linear-gradient(90deg, #fff 0%, #94a3b8 40%, #3b82f6 70%, #6366f1 100%);
+            background: linear-gradient(90deg, #fff 0%, #94a3b8 35%, #3b82f6 65%, #6366f1 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
             user-select: none;
         }
 
+        /* ─── Encrypted Badge ─── */
         .header-badge {
             display: flex;
             align-items: center;
             gap: 8px;
-            padding: 8px 16px;
-            background: rgba(0,0,0,0.25);
-            border: 1px solid rgba(255,255,255,0.07);
+            padding: 7px 14px;
+            background: rgba(16,185,129,0.08);
+            border: 1px solid rgba(16,185,129,0.22);
             border-radius: 100px;
-            font-size: 12px;
+            font-size: 11px;
             font-family: 'Space Mono', monospace;
-            color: var(--slate-400);
+            color: #6ee7b7;
+            letter-spacing: 0.3px;
         }
 
-        .header-badge-dot {
+        .badge-dot {
             width: 7px;
             height: 7px;
             border-radius: 50%;
             background: var(--success-primary);
-            box-shadow: 0 0 0 0 var(--success-glow);
-            animation: dotPulse 2s ease-out infinite;
             flex-shrink: 0;
+            animation: pulseGlow 2s ease-out infinite;
         }
 
-        @keyframes dotPulse {
-            0%  { box-shadow: 0 0 0 0 rgba(16,185,129,0.6); }
-            70% { box-shadow: 0 0 0 8px rgba(16,185,129,0); }
-            100%{ box-shadow: 0 0 0 0 rgba(16,185,129,0); }
+        @keyframes pulseGlow {
+            0%   { box-shadow: 0 0 0 0 rgba(16,185,129,0.7); }
+            70%  { box-shadow: 0 0 0 7px rgba(16,185,129,0); }
+            100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
         }
 
         /* ============================================================
            CONTENT
            ============================================================ */
         .content {
-            padding: 40px;
+            padding: 40px 36px;
             position: relative;
             z-index: 1;
         }
@@ -186,91 +311,134 @@
            ============================================================ */
         .status-section {
             text-align: center;
-            margin-bottom: 36px;
+            margin-bottom: 40px;
         }
 
-        /* Status icon circle */
+        /* Outer wrapper for rings + icon */
         .status-icon-wrap {
             position: relative;
-            width: 96px;
-            height: 96px;
-            margin: 0 auto 24px;
+            width: 108px;
+            height: 108px;
+            margin: 0 auto 28px;
         }
 
-        .status-icon-ring {
+        /* Outer spinning ring */
+        .status-ring-outer {
             position: absolute;
-            inset: -8px;
+            inset: -10px;
             border-radius: 50%;
             border: 2px solid transparent;
-            border-top-color: rgba(59,130,246,0.8);
+            border-top-color: rgba(59,130,246,0.85);
             border-right-color: rgba(99,102,241,0.5);
-            animation: ringSpinNormal 2.5s linear infinite;
+            animation: spinRing 2.4s linear infinite;
+            pointer-events: none;
+        }
+        /* Inner counter-spinning ring */
+        .status-ring-inner {
+            position: absolute;
+            inset: 6px;
+            border-radius: 50%;
+            border: 1.5px dashed rgba(255,255,255,0.07);
+            animation: spinRing 6s linear infinite reverse;
             pointer-events: none;
         }
 
+        @keyframes spinRing { to { transform: rotate(360deg); } }
+
         .status-icon {
-            width: 96px;
-            height: 96px;
+            width: 108px;
+            height: 108px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 38px;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
-            transition: all 0.5s var(--ease-smooth);
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.10);
+            box-shadow: 0 16px 40px rgba(0,0,0,0.5);
+            transition: all 0.6s var(--ease-smooth);
             position: relative;
             z-index: 1;
         }
 
-        @keyframes ringSpinNormal  { to { transform: rotate(360deg); } }
-
+        /* State colours */
         .status-icon.connecting {
-            color: var(--warning-primary);
-            border-color: rgba(245, 158, 11, 0.3);
-            box-shadow: 0 0 0 0 rgba(245,158,11,0.3);
-            animation: iconPulseAmber 2s infinite;
+            border-color: rgba(245,158,11,0.35);
+            animation: pulseAmber 2.2s ease-in-out infinite;
         }
         .status-icon.connected {
-            color: var(--success-primary);
-            border-color: rgba(16, 185, 129, 0.4);
-            box-shadow: 0 0 30px rgba(16,185,129,0.15);
+            border-color: rgba(16,185,129,0.5);
+            box-shadow: 0 0 0 0 rgba(16,185,129,0), 0 16px 40px rgba(0,0,0,0.5);
         }
         .status-icon.transferring {
-            color: var(--accent-primary);
-            border-color: rgba(59,130,246,0.4);
-            box-shadow: 0 0 30px rgba(59,130,246,0.2);
-            animation: iconPulseBlue 1.5s infinite;
+            border-color: rgba(59,130,246,0.5);
+            animation: pulseBlue 1.6s ease-in-out infinite;
         }
         .status-icon.error {
-            color: #ef4444;
-            border-color: rgba(239,68,68,0.35);
-            box-shadow: 0 0 30px rgba(239,68,68,0.1);
+            border-color: rgba(239,68,68,0.4);
+            box-shadow: 0 0 24px rgba(239,68,68,0.12), 0 16px 40px rgba(0,0,0,0.5);
         }
 
-        @keyframes iconPulseAmber {
-            0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245,158,11,0.3); }
-            50% { transform: scale(1.04); box-shadow: 0 0 0 12px rgba(245,158,11,0); }
+        @keyframes pulseAmber {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(245,158,11,0.25), 0 16px 40px rgba(0,0,0,0.5); }
+            50%       { box-shadow: 0 0 0 14px rgba(245,158,11,0), 0 16px 40px rgba(0,0,0,0.5); }
         }
-        @keyframes iconPulseBlue {
-            0%, 100% { transform: scale(1); box-shadow: 0 0 20px rgba(59,130,246,0.1); }
-            50% { transform: scale(1.03); box-shadow: 0 0 30px rgba(59,130,246,0.3); }
+        @keyframes pulseBlue {
+            0%, 100% { box-shadow: 0 0 16px rgba(59,130,246,0.12), 0 16px 40px rgba(0,0,0,0.5); }
+            50%       { box-shadow: 0 0 32px rgba(59,130,246,0.35), 0 16px 40px rgba(0,0,0,0.5); }
+        }
+
+        /* SVG icon inside circle */
+        .status-svg {
+            transition: all 0.5s var(--ease-smooth);
+        }
+        .status-icon.connecting  .status-svg { color: var(--warning-primary); }
+        .status-icon.connected   .status-svg { color: var(--success-primary); }
+        .status-icon.transferring .status-svg { color: var(--accent-primary); }
+        .status-icon.error       .status-svg { color: var(--red-primary); }
+
+        /* connecting SVG animation */
+        .status-icon.connecting .spin-icon { animation: spinRing 1.2s linear infinite; }
+
+        /* transferring pulse */
+        .status-icon.transferring .status-svg {
+            animation: iconPulse 1s ease-in-out infinite;
+        }
+        @keyframes iconPulse {
+            0%, 100% { transform: scale(1); }
+            50%       { transform: scale(1.1); filter: drop-shadow(0 0 8px rgba(59,130,246,0.7)); }
+        }
+
+        /* connected draw checkmark */
+        .check-path {
+            stroke-dasharray: 50;
+            stroke-dashoffset: 50;
+        }
+        .status-icon.connected .check-path {
+            animation: drawCheck 0.5s var(--ease-spring) 0.1s forwards;
+        }
+        @keyframes drawCheck { to { stroke-dashoffset: 0; } }
+
+        /* complete glow burst */
+        @keyframes successBurst {
+            0%   { box-shadow: 0 0 0 0 rgba(16,185,129,0.6), 0 16px 40px rgba(0,0,0,0.5); }
+            40%  { box-shadow: 0 0 0 24px rgba(16,185,129,0), 0 16px 40px rgba(0,0,0,0.5); }
+            100% { box-shadow: 0 0 20px rgba(16,185,129,0.15), 0 16px 40px rgba(0,0,0,0.5); }
         }
 
         .status-title {
-            font-size: 22px;
-            font-weight: 700;
+            font-size: 24px;
+            font-weight: 800;
             margin-bottom: 8px;
             background: linear-gradient(90deg, #fff, #cbd5e1);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            letter-spacing: -0.3px;
         }
 
         .status-sub {
             font-family: 'Space Mono', monospace;
-            font-size: 12px;
+            font-size: 11.5px;
             color: var(--slate-400);
             letter-spacing: 0.3px;
         }
@@ -278,29 +446,26 @@
         /* ============================================================
            FILE LIST
            ============================================================ */
-        #fileInfoSection {
-            margin-bottom: 24px;
-        }
+        #fileInfoSection { margin-bottom: 28px; }
 
         .files-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
             margin-bottom: 14px;
-            gap: 12px;
         }
 
         .files-header-label {
-            font-size: 12px;
-            font-weight: 600;
+            font-size: 11px;
+            font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.8px;
+            letter-spacing: 1px;
             color: var(--slate-400);
         }
 
         .files-count-badge {
             background: rgba(59,130,246,0.12);
-            border: 1px solid rgba(59,130,246,0.25);
+            border: 1px solid rgba(59,130,246,0.28);
             color: #93c5fd;
             font-size: 11px;
             font-family: 'Space Mono', monospace;
@@ -308,110 +473,123 @@
             border-radius: 999px;
         }
 
-        /* Individual file card */
+        /* ── File Card ── */
         .file-card {
             display: grid;
             grid-template-columns: auto 1fr auto;
             align-items: center;
             gap: 14px;
             padding: 16px 20px;
-            background: rgba(255,255,255,0.03);
-            border: 1px solid rgba(255,255,255,0.07);
-            border-radius: 18px;
+            background: rgba(255,255,255,0.025);
+            border: 1px solid rgba(255,255,255,0.065);
+            border-radius: 20px;
             margin-bottom: 10px;
-            transition: all 0.3s var(--ease-smooth);
+            transition: all 0.35s var(--ease-smooth);
             position: relative;
             overflow: hidden;
         }
 
+        /* Left accent bar */
         .file-card::before {
             content: '';
             position: absolute;
             left: 0; top: 0; bottom: 0;
             width: 3px;
             background: linear-gradient(180deg, var(--accent-primary), var(--accent-secondary));
-            border-radius: 0 2px 2px 0;
+            border-radius: 0 3px 3px 0;
             opacity: 0;
             transition: opacity 0.3s;
         }
 
         .file-card:hover {
-            background: rgba(255,255,255,0.05);
+            background: rgba(255,255,255,0.045);
             border-color: rgba(255,255,255,0.12);
-            transform: translateY(-1px);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
         }
+        .file-card:hover::before { opacity: 1; }
 
-        .file-card:hover::before {
-            opacity: 1;
-        }
-
-        /* File card — receiving state */
         .file-card.receiving {
-            border-color: rgba(59,130,246,0.25);
-            background: rgba(59,130,246,0.04);
+            border-color: rgba(59,130,246,0.28);
+            background: rgba(59,130,246,0.05);
         }
 
-        /* File card — ready state */
         .file-card.ready {
-            border-color: rgba(16,185,129,0.25);
-            background: rgba(16,185,129,0.03);
+            border-color: rgba(16,185,129,0.28);
+            background: rgba(16,185,129,0.04);
+            animation: cardReady 0.5s var(--ease-bounce);
         }
         .file-card.ready::before {
             background: linear-gradient(180deg, var(--success-primary), #059669);
             opacity: 1;
         }
+        @keyframes cardReady {
+            0%  { transform: scale(0.99); }
+            50% { transform: scale(1.012); }
+            100%{ transform: scale(1); }
+        }
 
+        /* File type icon box */
         .file-card-icon {
-            width: 44px;
-            height: 44px;
+            width: 46px; height: 46px;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: rgba(255,255,255,0.05);
-            border-radius: 12px;
+            border-radius: 13px;
             border: 1px solid rgba(255,255,255,0.08);
-            color: var(--slate-400);
+            background: rgba(255,255,255,0.04);
             flex-shrink: 0;
-            transition: all 0.3s;
+            transition: all 0.3s var(--ease-spring);
         }
 
         .file-card.ready .file-card-icon {
             background: rgba(16,185,129,0.12);
             border-color: rgba(16,185,129,0.3);
+        }
+
+        /* Type-specific colours */
+        .file-card-icon.type-image  { color: #f472b6; background: rgba(244,114,182,0.1); border-color: rgba(244,114,182,0.2); }
+        .file-card-icon.type-video  { color: #a78bfa; background: rgba(167,139,250,0.1); border-color: rgba(167,139,250,0.2); }
+        .file-card-icon.type-audio  { color: #fb923c; background: rgba(251,146,60,0.1);  border-color: rgba(251,146,60,0.2);  }
+        .file-card-icon.type-zip    { color: #fbbf24; background: rgba(251,191,36,0.1);  border-color: rgba(251,191,36,0.2);  }
+        .file-card-icon.type-code   { color: #34d399; background: rgba(52,211,153,0.1);  border-color: rgba(52,211,153,0.2);  }
+        .file-card-icon.type-text   { color: #60a5fa; background: rgba(96,165,250,0.1);  border-color: rgba(96,165,250,0.2);  }
+        .file-card-icon.type-file   { color: #94a3b8; background: rgba(148,163,184,0.08);border-color: rgba(148,163,184,0.15);}
+        .file-card.ready .file-card-icon.type-image,
+        .file-card.ready .file-card-icon.type-video,
+        .file-card.ready .file-card-icon.type-audio,
+        .file-card.ready .file-card-icon.type-zip,
+        .file-card.ready .file-card-icon.type-code,
+        .file-card.ready .file-card-icon.type-text,
+        .file-card.ready .file-card-icon.type-file {
             color: var(--success-primary);
+            background: rgba(16,185,129,0.12);
+            border-color: rgba(16,185,129,0.3);
         }
 
-        .file-card-info {
-            flex: 1;
-            min-width: 0;
-        }
-
+        .file-card-info { flex: 1; min-width: 0; }
         .file-card-name {
-            font-size: 14px;
+            font-size: 13.5px;
             font-weight: 600;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            margin-bottom: 4px;
+            margin-bottom: 3px;
         }
-
         .file-card-meta {
             font-size: 11px;
             font-family: 'Space Mono', monospace;
             color: var(--slate-400);
         }
 
-        .file-card-action {
-            flex-shrink: 0;
-        }
-
+        /* ── Download Button ── */
         .dl-btn {
             display: inline-flex;
             align-items: center;
             gap: 6px;
             padding: 8px 16px;
             background: rgba(16,185,129,0.12);
-            border: 1px solid rgba(16,185,129,0.3);
+            border: 1px solid rgba(16,185,129,0.32);
             color: var(--success-primary);
             border-radius: 10px;
             font-size: 12px;
@@ -421,62 +599,63 @@
             transition: all 0.25s var(--ease-spring);
             white-space: nowrap;
         }
-
         .dl-btn:hover {
             background: var(--success-primary);
-            color: white;
-            box-shadow: 0 8px 20px rgba(16,185,129,0.35);
+            color: #fff;
+            box-shadow: 0 6px 20px rgba(16,185,129,0.4);
             transform: translateY(-1px);
         }
+        .dl-btn:active { transform: scale(0.97); }
+        .dl-btn svg { transition: transform 0.3s var(--ease-spring); }
+        .dl-btn:hover svg { transform: translateY(2px); }
 
-        .dl-btn:active {
-            transform: translateY(0) scale(0.97);
-        }
-
-        /* Download All — primary CTA */
+        /* ── Download All CTA ── */
         .dl-all-btn {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
+            gap: 12px;
             width: 100%;
-            padding: 16px 24px;
-            background: linear-gradient(135deg, var(--success-primary) 0%, #059669 100%);
+            padding: 18px 24px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 50%, #10b981 100%);
+            background-size: 200% 100%;
             color: white;
             border: none;
-            border-radius: 16px;
+            border-radius: 18px;
             font-size: 15px;
             font-weight: 700;
             font-family: 'Outfit', sans-serif;
             cursor: pointer;
-            box-shadow: 0 12px 30px rgba(16,185,129,0.3);
-            transition: all 0.25s var(--ease-spring);
-            margin-bottom: 24px;
+            box-shadow:
+                0 14px 36px rgba(16,185,129,0.36),
+                inset 0 1px 0 rgba(255,255,255,0.15);
+            transition: all 0.3s var(--ease-spring);
+            margin-bottom: 28px;
+            letter-spacing: 0.2px;
+            animation: btnGradientShift 4s ease-in-out infinite;
         }
-
+        @keyframes btnGradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50%       { background-position: 100% 50%; }
+        }
         .dl-all-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 18px 40px rgba(16,185,129,0.4);
+            transform: translateY(-3px);
+            box-shadow: 0 22px 48px rgba(16,185,129,0.48), inset 0 1px 0 rgba(255,255,255,0.2);
         }
-
-        .dl-all-btn:active {
-            transform: translateY(0) scale(0.98);
-        }
-
-        .dl-all-btn svg {
+        .dl-all-btn:active { transform: translateY(0) scale(0.99); }
+        .dl-all-btn .btn-icon {
+            width: 22px; height: 22px;
+            display: flex; align-items: center; justify-content: center;
             transition: transform 0.3s var(--ease-spring);
         }
-
-        .dl-all-btn:hover svg {
-            transform: translateY(2px);
-        }
+        .dl-all-btn:hover .btn-icon { transform: translateY(3px); }
 
         /* ============================================================
            PROGRESS BAR
            ============================================================ */
         .progress-section {
-            background: rgba(0,0,0,0.2);
-            border: 1px solid rgba(255,255,255,0.06);
+            background: rgba(0,0,0,0.22);
+            border: 1px solid rgba(255,255,255,0.065);
             border-radius: 20px;
             padding: 20px 24px;
             margin-bottom: 24px;
@@ -489,22 +668,18 @@
             margin-bottom: 12px;
         }
 
-        .progress-label {
-            font-size: 13px;
-            font-weight: 500;
-            color: var(--slate-400);
-        }
+        .progress-label { font-size: 13px; font-weight: 500; color: var(--slate-400); }
 
         .progress-pct {
-            font-size: 13px;
             font-family: 'Space Mono', monospace;
+            font-size: 13px;
             color: var(--accent-primary);
             font-weight: 700;
         }
 
         .progress-bar-container {
             height: 6px;
-            background: rgba(255,255,255,0.06);
+            background: rgba(255,255,255,0.07);
             border-radius: 999px;
             overflow: hidden;
         }
@@ -515,13 +690,30 @@
             background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary), var(--accent-primary));
             background-size: 200% 100%;
             transition: width 0.4s var(--ease-smooth);
-            box-shadow: 0 0 12px rgba(59,130,246,0.5);
+            box-shadow: 0 0 14px rgba(59,130,246,0.55);
             animation: progressShimmer 2s linear infinite;
         }
 
         @keyframes progressShimmer {
             0%   { background-position: 0% 0; }
             100% { background-position: 200% 0; }
+        }
+
+        /* Transfer speed / ETA chips */
+        .progress-meta {
+            display: flex;
+            gap: 12px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        .progress-chip {
+            font-size: 10.5px;
+            font-family: 'Space Mono', monospace;
+            color: var(--slate-400);
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 999px;
+            padding: 3px 10px;
         }
 
         /* ============================================================
@@ -534,20 +726,23 @@
             border: 1px solid rgba(239,68,68,0.15);
             border-radius: 20px;
             margin-top: 16px;
+            animation: shakeIn 0.4s var(--ease-spring);
+        }
+        @keyframes shakeIn {
+            0%   { transform: translateX(0) scale(0.98); }
+            25%  { transform: translateX(-4px); }
+            50%  { transform: translateX(4px); }
+            75%  { transform: translateX(-2px); }
+            100% { transform: translateX(0) scale(1); }
         }
 
-        .error-msg {
-            color: #fca5a5;
-            font-size: 14px;
-            line-height: 1.6;
-            margin-bottom: 20px;
-        }
+        .error-msg { color: #fca5a5; font-size: 14px; line-height: 1.65; margin-bottom: 20px; }
 
         .retry-btn {
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            padding: 12px 24px;
+            padding: 12px 28px;
             background: rgba(255,255,255,0.06);
             border: 1px solid rgba(255,255,255,0.12);
             border-radius: 12px;
@@ -558,31 +753,38 @@
             cursor: pointer;
             transition: all 0.25s var(--ease-spring);
         }
-
-        .retry-btn:hover {
-            background: rgba(255,255,255,0.1);
-            transform: translateY(-1px);
-        }
+        .retry-btn:hover { background: rgba(255,255,255,0.1); transform: translateY(-1px); }
+        .retry-btn svg { transition: transform 0.5s; }
+        .retry-btn:hover svg { transform: rotate(-360deg); }
 
         /* ============================================================
-           SECURITY FOOTER
+           SECURITY FOOTER PILL
            ============================================================ */
         .security-footer {
             display: flex;
             align-items: center;
             gap: 10px;
-            padding: 14px 20px;
-            background: rgba(0,0,0,0.2);
-            border: 1px solid rgba(255,255,255,0.05);
+            padding: 12px 20px;
+            background: rgba(16,185,129,0.05);
+            border: 1px solid rgba(16,185,129,0.14);
             border-radius: 100px;
             margin-top: 32px;
+            transition: all 0.4s;
+        }
+        .security-footer:hover {
+            border-color: rgba(16,185,129,0.28);
+            background: rgba(16,185,129,0.09);
         }
 
         .security-footer-icon {
             color: var(--success-primary);
             display: flex;
-            align-items: center;
             flex-shrink: 0;
+            animation: shieldPulse 4s ease-in-out infinite;
+        }
+        @keyframes shieldPulse {
+            0%, 100% { filter: drop-shadow(0 0 0 rgba(16,185,129,0)); }
+            50%       { filter: drop-shadow(0 0 5px rgba(16,185,129,0.7)); }
         }
 
         .security-footer-text {
@@ -598,66 +800,120 @@
         .hidden { display: none !important; }
 
         @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(8px); }
-            to   { opacity: 1; transform: translateY(0); }
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: translateY(0);    }
         }
-
-        .fade-in {
-            animation: fadeInUp 0.4s var(--ease-smooth) both;
-        }
+        .fade-in { animation: fadeInUp 0.45s var(--ease-smooth) both; }
 
         /* ============================================================
            RESPONSIVE
            ============================================================ */
         @media (max-width: 560px) {
             .content  { padding: 28px 24px; }
-            .header   { padding: 24px; }
+            .header   { padding: 22px 24px; }
             .file-card { padding: 14px 16px; gap: 12px; }
-            .file-card-icon { width: 38px; height: 38px; border-radius: 10px; }
-            .status-icon-wrap { width: 80px; height: 80px; }
-            .status-icon { width: 80px; height: 80px; font-size: 30px; }
+            .file-card-icon { width: 40px; height: 40px; border-radius: 11px; }
+            .status-icon-wrap { width: 92px; height: 92px; }
+            .status-icon { width: 92px; height: 92px; }
         }
     </style>
 </head>
 
 <body>
+    <!-- Aurora background -->
+    <div class="aurora-bg" aria-hidden="true">
+        <div class="aurora-orb"></div>
+    </div>
+    <div class="noise-overlay" aria-hidden="true"></div>
+    <div class="grid-overlay"  aria-hidden="true"></div>
+
     <div class="container">
         <div class="card">
-            <!-- Header -->
+            <!-- ── Header ── -->
             <div class="header">
                 <div class="header-content">
-                    <h1 class="logo">DROPZONE</h1>
+                    <div class="logo-group">
+                        <!-- SVG Logo Mark -->
+                        <div class="logo-mark">
+                            <svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <defs>
+                                    <linearGradient id="blueGrad" x1="0" y1="0" x2="1" y2="1">
+                                        <stop offset="0%" stop-color="#22d3ee"/>
+                                        <stop offset="100%" stop-color="#3b82f6"/>
+                                    </linearGradient>
+                                    <linearGradient id="orangeGrad" x1="0" y1="1" x2="1" y2="0">
+                                        <stop offset="0%" stop-color="#f97316"/>
+                                        <stop offset="100%" stop-color="#fbbf24"/>
+                                    </linearGradient>
+                                    <linearGradient id="fileGrad" x1="0" y1="0" x2="0.5" y2="1">
+                                        <stop offset="0%" stop-color="#38bdf8"/>
+                                        <stop offset="100%" stop-color="#3b82f6"/>
+                                    </linearGradient>
+                                    <filter id="logoGlow">
+                                        <feGaussianBlur stdDeviation="1.5" result="blur"/>
+                                        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                                    </filter>
+                                </defs>
+                                <g class="logo-arrows-spin" filter="url(#logoGlow)">
+                                    <path d="M 40 14 A 18 18 0 0 1 42 30" stroke="url(#blueGrad)" stroke-width="3.2" stroke-linecap="round" fill="none"/>
+                                    <polygon points="44,12 40,10 38,15" fill="url(#blueGrad)"/>
+                                    <path d="M 16 42 A 18 18 0 0 1 14 26" stroke="url(#orangeGrad)" stroke-width="3.2" stroke-linecap="round" fill="none"/>
+                                    <polygon points="12,44 16,46 18,41" fill="url(#orangeGrad)"/>
+                                </g>
+                                <g class="logo-file-icon">
+                                    <rect x="20" y="17" width="16" height="22" rx="2.5" fill="rgba(30,58,138,0.5)" stroke="url(#fileGrad)" stroke-width="1.5"/>
+                                    <path d="M30 17 L30 23 L36 23" stroke="url(#fileGrad)" stroke-width="1.3" fill="rgba(30,58,138,0.4)" stroke-linejoin="round"/>
+                                    <line x1="24" y1="28" x2="32" y2="28" stroke="url(#blueGrad)" stroke-width="1.2" stroke-linecap="round" opacity="0.7"/>
+                                    <line x1="24" y1="31.5" x2="30" y2="31.5" stroke="url(#blueGrad)" stroke-width="1.2" stroke-linecap="round" opacity="0.5"/>
+                                    <line x1="24" y1="35" x2="28" y2="35" stroke="url(#blueGrad)" stroke-width="1.2" stroke-linecap="round" opacity="0.3"/>
+                                </g>
+                                <circle class="logo-sparkle s1" cx="44" cy="10" r="1.3" fill="#22d3ee"/>
+                                <circle class="logo-sparkle s2" cx="12" cy="46" r="1" fill="#f97316"/>
+                                <circle class="logo-sparkle s3" cx="46" cy="34" r="0.8" fill="#38bdf8"/>
+                            </svg>
+                        </div>
+                        <span class="logo-text">DROPZONE</span>
+                    </div>
                     <div class="header-badge">
-                        <span class="header-badge-dot"></span>
+                        <span class="badge-dot"></span>
                         <span>P2P Encrypted</span>
                     </div>
                 </div>
             </div>
 
             <div class="content">
-                <!-- Status Section -->
+                <!-- ── Status Section ── -->
                 <div class="status-section" id="statusSection">
                     <div class="status-icon-wrap">
-                        <div class="status-icon-ring" id="statusRing"></div>
-                        <div class="status-icon connecting" id="statusIcon">⏳</div>
+                        <div class="status-ring-outer" id="statusRingOuter"></div>
+                        <div class="status-ring-inner"></div>
+                        <div class="status-icon connecting" id="statusIcon">
+                            <!-- Connecting icon (clock/spinner) — swapped by JS -->
+                            <svg class="status-svg spin-icon" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="9" stroke-opacity="0.25"/>
+                                <path d="M12 3 A9 9 0 0 1 21 12" stroke-width="2"/>
+                            </svg>
+                        </div>
                     </div>
                     <h2 class="status-title" id="statusText">Connecting to sender...</h2>
-                    <p class="status-sub" id="statusSub">Negotiating secure P2P tunnel</p>
+                    <p class="status-sub"  id="statusSub">Negotiating secure P2P tunnel</p>
                 </div>
 
-                <!-- Download All Button -->
+                <!-- ── Download All Button ── -->
                 <div id="actionArea" class="hidden">
                     <button class="dl-all-btn" id="downloadAllBtn">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                            <polyline points="7 10 12 15 17 10"></polyline>
-                            <line x1="12" y1="15" x2="12" y2="3"></line>
-                        </svg>
+                        <span class="btn-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="7 10 12 15 17 10"/>
+                                <line x1="12" y1="15" x2="12" y2="3"/>
+                            </svg>
+                        </span>
                         Download All Files
                     </button>
                 </div>
 
-                <!-- File List -->
+                <!-- ── File List ── -->
                 <div id="fileInfoSection" class="hidden">
                     <div class="files-header">
                         <span class="files-header-label">Files</span>
@@ -666,35 +922,38 @@
                     <div id="filesList"></div>
                 </div>
 
-                <!-- Progress Bar -->
+                <!-- ── Progress Bar ── -->
                 <div id="progressSection" class="progress-section hidden">
                     <div class="progress-header">
                         <span class="progress-label" id="progressLabel">Receiving data...</span>
-                        <span class="progress-pct" id="progressPct">0%</span>
+                        <span class="progress-pct"   id="progressPct">0%</span>
                     </div>
                     <div class="progress-bar-container">
-                        <div class="progress-bar-fill" id="progressFill" style="width: 0%"></div>
+                        <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+                    </div>
+                    <div class="progress-meta">
+                        <span class="progress-chip" id="progressChip">Direct P2P</span>
+                        <span class="progress-chip">DTLS 1.3 Encrypted</span>
                     </div>
                 </div>
 
-                <!-- Error Section -->
+                <!-- ── Error Section ── -->
                 <div id="errorSection" class="error-section hidden">
                     <p class="error-msg" id="errorText"></p>
                     <button class="retry-btn" onclick="location.reload()">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="23 4 23 10 17 10"></polyline>
-                            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                            <polyline points="23 4 23 10 17 10"/>
+                            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
                         </svg>
                         Retry Connection
                     </button>
                 </div>
 
-                <!-- Security Footer -->
+                <!-- ── Security Footer ── -->
                 <div class="security-footer">
                     <div class="security-footer-icon">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
                         </svg>
                     </div>
                     <span class="security-footer-text" id="securityBadgeText">End-to-end P2P encrypted • Verifying protocol...</span>
@@ -704,27 +963,28 @@
     </div>
 
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-    <script src="/webrtc.js?v=18"></script>
+    <script src="/webrtc.js?v=19"></script>
     <script>
         window.BACKEND_URL = window.location.origin;
 
         const roomId = window.location.pathname.split('/p2p/')[1] || window.location.search.split('?room=')[1];
 
-        const statusIcon     = document.getElementById('statusIcon');
-        const statusRing     = document.getElementById('statusRing');
-        const statusText     = document.getElementById('statusText');
-        const statusSub      = document.getElementById('statusSub');
-        const fileInfoSection= document.getElementById('fileInfoSection');
-        const filesList      = document.getElementById('filesList');
-        const filesCountBadge= document.getElementById('filesCountBadge');
-        const progressSection= document.getElementById('progressSection');
-        const progressLabel  = document.getElementById('progressLabel');
-        const progressPct    = document.getElementById('progressPct');
-        const progressFill   = document.getElementById('progressFill');
-        const actionArea     = document.getElementById('actionArea');
-        const downloadAllBtn = document.getElementById('downloadAllBtn');
-        const errorSection   = document.getElementById('errorSection');
-        const errorText      = document.getElementById('errorText');
+        const statusIcon      = document.getElementById('statusIcon');
+        const statusRingOuter = document.getElementById('statusRingOuter');
+        const statusText      = document.getElementById('statusText');
+        const statusSub       = document.getElementById('statusSub');
+        const fileInfoSection = document.getElementById('fileInfoSection');
+        const filesList       = document.getElementById('filesList');
+        const filesCountBadge = document.getElementById('filesCountBadge');
+        const progressSection = document.getElementById('progressSection');
+        const progressLabel   = document.getElementById('progressLabel');
+        const progressPct     = document.getElementById('progressPct');
+        const progressFill    = document.getElementById('progressFill');
+        const progressChip    = document.getElementById('progressChip');
+        const actionArea      = document.getElementById('actionArea');
+        const downloadAllBtn  = document.getElementById('downloadAllBtn');
+        const errorSection    = document.getElementById('errorSection');
+        const errorText       = document.getElementById('errorText');
 
         let webrtc   = null;
         let senderId = null;
@@ -738,40 +998,71 @@
             return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
         }
 
-        function setStatus(icon, text, sub, cls) {
-            statusIcon.textContent = icon;
-            statusIcon.className   = 'status-icon ' + cls;
+        // ─────────────────────────────────────────────────────────
+        // STATUS ICON SVGs — clean, per-state
+        // ─────────────────────────────────────────────────────────
+        const STATUS_ICONS = {
+            connecting: `<svg class="status-svg spin-icon" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="9" stroke-opacity="0.2"/>
+                <path d="M12 3 A9 9 0 0 1 21 12" stroke-width="2.2"/>
+            </svg>`,
+            connected: `<svg class="status-svg" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline class="check-path" points="20 6 9 17 4 12"/>
+            </svg>`,
+            transferring: `<svg class="status-svg" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>`,
+            complete: `<svg class="status-svg" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                <polyline class="check-path" points="22 4 12 14.01 9 11.01"/>
+            </svg>`,
+            'sender-offline': `<svg class="status-svg" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18.36 6.64A9 9 0 1 1 5.64 19.36"/>
+                <polyline points="23 4 23 10 17 10"/>
+            </svg>`,
+            error: `<svg class="status-svg" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="9"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>`,
+        };
+
+        function setStatus(state, text, sub) {
+            statusIcon.innerHTML  = STATUS_ICONS[state] || STATUS_ICONS.connecting;
+            statusIcon.className  = 'status-icon ' + state;
             statusText.textContent = text;
             statusSub.textContent  = sub;
 
-            // Speed up / slow down the ring depending on state
-            if (cls === 'transferring') {
-                statusRing.style.animationDuration = '0.8s';
-            } else if (cls === 'error') {
-                statusRing.style.opacity = '0.3';
-                statusRing.style.animationDuration = '4s';
-            } else {
-                statusRing.style.opacity = '1';
-                statusRing.style.animationDuration = '2.5s';
+            // Adjust outer ring speed
+            const dur = state === 'transferring' ? '0.7s' : state === 'error' ? '5s' : '2.4s';
+            const op  = state === 'error' ? '0.3' : '1';
+            statusRingOuter.style.animationDuration = dur;
+            statusRingOuter.style.opacity = op;
+
+            // Burst animation on complete
+            if (state === 'complete' || state === 'connected') {
+                statusIcon.style.animation = 'successBurst 0.7s ease-out forwards';
             }
         }
 
-        function getFileIcon(name) {
+        // ─────────────────────────────────────────────────────────
+        // FILE TYPE INFO — icon + class
+        // ─────────────────────────────────────────────────────────
+        function getFileTypeInfo(name) {
             const ext = (name.split('.').pop() || '').toLowerCase();
-            if (['jpg','jpeg','png','gif','webp','svg','bmp'].includes(ext)) {
-                return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`;
-            }
-            if (['mp4','mov','avi','mkv','webm'].includes(ext)) {
-                return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>`;
-            }
-            if (['mp3','wav','flac','aac','ogg'].includes(ext)) {
-                return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>`;
-            }
-            if (['zip','rar','7z','tar','gz'].includes(ext)) {
-                return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>`;
-            }
-            // generic document
-            return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>`;
+            if (['jpg','jpeg','png','gif','webp','svg','bmp','ico','tiff'].includes(ext))
+                return { cls: 'type-image', svg: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>` };
+            if (['mp4','mov','avi','mkv','webm','m4v'].includes(ext))
+                return { cls: 'type-video', svg: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>` };
+            if (['mp3','wav','flac','aac','ogg','m4a'].includes(ext))
+                return { cls: 'type-audio', svg: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>` };
+            if (['zip','rar','7z','tar','gz','bz2','xz'].includes(ext))
+                return { cls: 'type-zip', svg: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>` };
+            if (['js','ts','jsx','tsx','py','java','c','cpp','cs','go','rs','rb','php','html','css','json','yaml','yml','sh'].includes(ext))
+                return { cls: 'type-code', svg: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>` };
+            if (['txt','md','doc','docx','pdf','rtf','odt'].includes(ext))
+                return { cls: 'type-text', svg: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>` };
+            return { cls: 'type-file', svg: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>` };
         }
 
         function updateFilesDisplay(files) {
@@ -779,11 +1070,11 @@
             fileInfoSection.classList.remove('hidden');
             filesCountBadge.textContent = files.length === 1 ? '1 file' : `${files.length} files`;
 
-            filesList.innerHTML = files.map((f, i) => `
-                <div class="file-card fade-in" id="file-card-${i}" style="animation-delay:${i * 60}ms">
-                    <div class="file-card-icon" id="file-icon-${i}">
-                        ${getFileIcon(f.name)}
-                    </div>
+            filesList.innerHTML = files.map((f, i) => {
+                const { cls, svg } = getFileTypeInfo(f.name);
+                return `
+                <div class="file-card fade-in" id="file-card-${i}" style="animation-delay:${i * 70}ms">
+                    <div class="file-card-icon ${cls}" id="file-icon-${i}">${svg}</div>
                     <div class="file-card-info">
                         <div class="file-card-name" title="${f.name}">${f.name}</div>
                         <div class="file-card-meta">${formatFileSize(f.size)}</div>
@@ -798,50 +1089,42 @@
                             Save
                         </button>
                     </div>
-                </div>
-            `).join('');
+                </div>`;
+            }).join('');
         }
 
         window.downloadFile = (index) => {
-            if (webrtc && senderId) {
-                webrtc.downloadFile(senderId, index);
-            }
+            if (webrtc && senderId) { webrtc.downloadFile(senderId, index); }
         };
 
         downloadAllBtn.onclick = () => {
-            if (webrtc && senderId) {
-                webrtc.downloadAll(senderId);
-            }
+            if (webrtc && senderId) { webrtc.downloadAll(senderId); }
         };
 
         async function init() {
             if (!roomId) {
-                setStatus('❌', 'Invalid link', 'No room ID found in URL', 'error');
+                setStatus('error', 'Invalid link', 'No room ID found in URL');
                 return;
             }
 
-            // Initial room check
             try {
                 const res  = await fetch(`${window.BACKEND_URL}/api/room/${roomId}`);
                 const data = await res.json();
 
                 if (!data.active) {
-                    setStatus('⏳', 'Share expired', 'This link is no longer available', 'error');
+                    setStatus('error', 'Share expired', 'This link is no longer available');
                     errorSection.classList.remove('hidden');
                     errorText.textContent = 'This share session has ended or never started.';
                     return;
                 }
 
-                if (data.files) {
-                    updateFilesDisplay(data.files);
-                }
+                if (data.files) { updateFilesDisplay(data.files); }
             } catch (e) {
                 console.warn('[Init] Initial room check failed:', e);
             }
 
             webrtc = new window.DropZoneWebRTC();
 
-            // Capture senderId when offer arrives
             const originalOnOffer = webrtc._onOffer.bind(webrtc);
             webrtc._onOffer = async (data) => {
                 senderId = data.senderId;
@@ -851,30 +1134,30 @@
             webrtc.onStatusChange = (status) => {
                 switch (status) {
                     case 'connecting':
-                        setStatus('🔗', 'Connecting...', 'Negotiating secure P2P tunnel', 'connecting');
+                        setStatus('connecting', 'Connecting...', 'Negotiating secure P2P tunnel');
                         break;
                     case 'connected':
-                        setStatus('🤝', 'Connected!', 'Ready to receive encrypted data', 'connected');
+                        setStatus('connected', 'Connected!', 'Ready to receive encrypted data');
                         break;
                     case 'transferring':
-                        setStatus('📡', 'Receiving...', 'Direct P2P transfer in progress', 'transferring');
+                        setStatus('transferring', 'Receiving...', 'Direct P2P transfer in progress');
                         progressSection.classList.remove('hidden');
                         break;
                     case 'complete':
-                        setStatus('✅', 'Transfer Complete', 'All files received successfully', 'connected');
+                        setStatus('complete', 'Transfer Complete', 'All files received successfully');
                         progressFill.style.width = '100%';
                         progressPct.textContent  = '100%';
                         progressLabel.textContent= 'Transfer complete!';
+                        progressChip.textContent = '✓ Done';
                         actionArea.classList.remove('hidden');
-                        // Reveal per-file download buttons
-                        document.querySelectorAll('[id^="dl-btn-"]').forEach(btn => btn.classList.remove('hidden'));
+                        document.querySelectorAll('[id^="dl-btn-"]').forEach(btn  => btn.classList.remove('hidden'));
                         document.querySelectorAll('[id^="file-card-"]').forEach(card => card.classList.add('ready'));
                         break;
                     case 'sender-offline':
-                        setStatus('⏸️', 'Sender Offline', 'Waiting for sender to reconnect...', 'error');
+                        setStatus('sender-offline', 'Sender Offline', 'Waiting for sender to reconnect...');
                         break;
                     case 'error':
-                        setStatus('❌', 'Connection failed', 'Please retry or check your network', 'error');
+                        setStatus('error', 'Connection failed', 'Please retry or check your network');
                         errorSection.classList.remove('hidden');
                         break;
                 }
@@ -893,7 +1176,6 @@
             };
 
             webrtc.onFileReceived = (file) => {
-                // Mark individual file card ready
                 const card = document.getElementById(`file-card-${file.fileIndex}`);
                 const btn  = document.getElementById(`dl-btn-${file.fileIndex}`);
                 if (card) card.classList.add('ready');
@@ -909,7 +1191,7 @@
                 await webrtc.connect(window.BACKEND_URL);
                 await webrtc.joinRoom(roomId);
             } catch (e) {
-                setStatus('❌', 'Connection failed', e.message, 'error');
+                setStatus('error', 'Connection failed', e.message);
                 errorSection.classList.remove('hidden');
                 errorText.textContent = 'Could not connect to the signaling server.';
             }

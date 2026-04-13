@@ -7,12 +7,15 @@
     <title>DROPZONE - P2P Secure File Sharing</title>
     <meta name="description"
         content="Share files directly between browsers using WebRTC with DTLS 1.3 encryption. No server storage, completely private.">
-    <link rel="stylesheet" href="styles.css?v=18">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet" href="styles.css?v=19">
 </head>
 
 <body>
     <!-- Ambient isometric grid (animated via CSS) -->
     <div class="iso-grid" aria-hidden="true"></div>
+    <!-- Noise overlay -->
+    <div class="noise-overlay" aria-hidden="true"></div>
 
     <div class="container">
         <!-- Main Card -->
@@ -20,11 +23,57 @@
             <!-- Header -->
             <div class="header">
                 <div class="header-content">
-                    <div>
-                        <h1 class="logo" id="animatedLogo" aria-label="DROPZONE">
-                            <span class="logo-letter" style="--i:0">D</span><span class="logo-letter" style="--i:1">R</span><span class="logo-letter" style="--i:2">O</span><span class="logo-letter" style="--i:3">P</span><span class="logo-letter" style="--i:4">Z</span><span class="logo-letter" style="--i:5">O</span><span class="logo-letter" style="--i:6">N</span><span class="logo-letter" style="--i:7">E</span>
-                        </h1>
-                        <p class="subtitle">P2P secure file sharing • DTLS 1.3</p>
+                    <div class="logo-group">
+                        <!-- Professional DropZone Logo -->
+                        <div class="logo-mark" aria-hidden="true">
+                            <svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <defs>
+                                    <linearGradient id="blueGrad" x1="0" y1="0" x2="1" y2="1">
+                                        <stop offset="0%" stop-color="#22d3ee"/>
+                                        <stop offset="100%" stop-color="#3b82f6"/>
+                                    </linearGradient>
+                                    <linearGradient id="orangeGrad" x1="0" y1="1" x2="1" y2="0">
+                                        <stop offset="0%" stop-color="#f97316"/>
+                                        <stop offset="100%" stop-color="#fbbf24"/>
+                                    </linearGradient>
+                                    <linearGradient id="fileGrad" x1="0" y1="0" x2="0.5" y2="1">
+                                        <stop offset="0%" stop-color="#38bdf8"/>
+                                        <stop offset="100%" stop-color="#3b82f6"/>
+                                    </linearGradient>
+                                    <filter id="logoGlow">
+                                        <feGaussianBlur stdDeviation="1.5" result="blur"/>
+                                        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                                    </filter>
+                                </defs>
+                                <!-- Outer rotating arrows -->
+                                <g class="logo-arrows-spin" filter="url(#logoGlow)">
+                                    <!-- Blue arrow (top-right arc) -->
+                                    <path d="M 40 14 A 18 18 0 0 1 42 30" stroke="url(#blueGrad)" stroke-width="3.2" stroke-linecap="round" fill="none"/>
+                                    <polygon points="44,12 40,10 38,15" fill="url(#blueGrad)"/>
+                                    <!-- Orange arrow (bottom-left arc) -->
+                                    <path d="M 16 42 A 18 18 0 0 1 14 26" stroke="url(#orangeGrad)" stroke-width="3.2" stroke-linecap="round" fill="none"/>
+                                    <polygon points="12,44 16,46 18,41" fill="url(#orangeGrad)"/>
+                                </g>
+                                <!-- Center file document icon -->
+                                <g class="logo-file-icon">
+                                    <rect x="20" y="17" width="16" height="22" rx="2.5" fill="rgba(30,58,138,0.5)" stroke="url(#fileGrad)" stroke-width="1.5"/>
+                                    <path d="M30 17 L30 23 L36 23" stroke="url(#fileGrad)" stroke-width="1.3" fill="rgba(30,58,138,0.4)" stroke-linejoin="round"/>
+                                    <line x1="24" y1="28" x2="32" y2="28" stroke="url(#blueGrad)" stroke-width="1.2" stroke-linecap="round" opacity="0.7"/>
+                                    <line x1="24" y1="31.5" x2="30" y2="31.5" stroke="url(#blueGrad)" stroke-width="1.2" stroke-linecap="round" opacity="0.5"/>
+                                    <line x1="24" y1="35" x2="28" y2="35" stroke="url(#blueGrad)" stroke-width="1.2" stroke-linecap="round" opacity="0.3"/>
+                                </g>
+                                <!-- Sparkle dots -->
+                                <circle class="logo-sparkle s1" cx="44" cy="10" r="1.3" fill="#22d3ee"/>
+                                <circle class="logo-sparkle s2" cx="12" cy="46" r="1" fill="#f97316"/>
+                                <circle class="logo-sparkle s3" cx="46" cy="34" r="0.8" fill="#38bdf8"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h1 class="logo" id="animatedLogo" aria-label="DROPZONE">
+                                <span class="logo-letter" style="--i:0">D</span><span class="logo-letter" style="--i:1">R</span><span class="logo-letter" style="--i:2">O</span><span class="logo-letter" style="--i:3">P</span><span class="logo-letter" style="--i:4">Z</span><span class="logo-letter" style="--i:5">O</span><span class="logo-letter" style="--i:6">N</span><span class="logo-letter" style="--i:7">E</span>
+                            </h1>
+                            <p class="subtitle">P2P secure file sharing • DTLS 1.3</p>
+                        </div>
                     </div>
                     <button id="resetBtn" class="reset-btn hidden">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -344,9 +393,9 @@
 
     <!-- Scripts -->
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-    <script src="webrtc.js?v=18"></script>
-    <script src="animations.js?v=18"></script>
-    <script src="script.js?v=18"></script>
+    <script src="webrtc.js?v=19"></script>
+    <script src="animations.js?v=19"></script>
+    <script src="script.js?v=19"></script>
     <!-- Backend configuration for hosting -->
     <script>
         window.BACKEND_URL = window.location.origin;
