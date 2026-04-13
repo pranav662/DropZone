@@ -316,7 +316,8 @@ body::after {
 .subtitle {
     font-family: 'Space Mono', monospace;
     opacity: 0;
-    font-size: 12px;
+    font-size: 13px;
+    color: #A0AAB2;
     margin-top: 6px;
     letter-spacing: 0.4px;
     animation: fadeInUp 0.7s 0.6s var(--ease-smooth) forwards;
@@ -324,7 +325,7 @@ body::after {
 
 @keyframes fadeInUp {
     from { opacity: 0; transform: translateY(8px); }
-    to   { opacity: 0.5; transform: translateY(0); }
+    to   { opacity: 1; transform: translateY(0); }
 }
 
 /* ============================================================
@@ -391,7 +392,7 @@ body::after {
 
 /* Floating upload icon */
 .icon-container {
-    width: 96px; height: 96px;
+    width: 108px; height: 108px;
     display: flex; align-items: center; justify-content: center;
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.08);
@@ -404,6 +405,10 @@ body::after {
     position: relative;
     overflow: visible;
     z-index: 1;
+}
+
+.icon-container svg {
+    width: 52px; height: 52px;
 }
 
 @keyframes iconFloat {
@@ -439,7 +444,8 @@ body::after {
     background: rgba(59, 130, 246, 0.06);
     box-shadow:
         0 0 0 4px rgba(59, 130, 246, 0.1),
-        0 0 60px rgba(59, 130, 246, 0.12);
+        0 0 60px rgba(59, 130, 246, 0.12),
+        inset 0 0 40px rgba(59, 130, 246, 0.15); /* inner glow */
     transform: scale(1.015);
 }
 
@@ -634,8 +640,8 @@ body::after {
 }
 .share-heading p { margin-top: 4px; }
 
-.info-text { font-size: 14px; opacity: 0.6; }
-.help-text { font-size: 13px; opacity: 0.5; margin-top: 8px; }
+.info-text { font-size: 14px; color: #A0AAB2; }
+.help-text { font-size: 13px; color: #A0AAB2; margin-top: 8px; }
 
 /* ============================================================
    TABS — Animated indicator
@@ -687,7 +693,16 @@ body::after {
     box-shadow: 0 4px 16px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.08);
 }
 
-.tab-btn.active svg { filter: drop-shadow(0 0 4px rgba(59,130,246,0.6)); }
+.tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent-primary), transparent);
+    box-shadow: 0 -2px 8px rgba(59, 130, 246, 0.6);
+}
+
+.tab-btn.active svg { filter: drop-shadow(0 0 4px rgba(59,130,246,0.6)); color: var(--accent-primary); }
 
 .tab-btn:hover:not(.active) { color: var(--slate-50); background: rgba(255,255,255,0.04); }
 
@@ -724,6 +739,12 @@ body::after {
     margin-bottom: 12px;
     letter-spacing: 0.5px;
     text-transform: uppercase;
+}
+
+button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 4px;
+    border-radius: 4px;
 }
 
 .link-container {
