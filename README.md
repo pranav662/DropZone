@@ -1,218 +1,113 @@
-# DROPZONE - Modern File Sharing Application
+# 🌌 DROPZONE
 
-A beautiful, modern file-sharing web application built with HTML, CSS, JavaScript, and Node.js. Features a distinctive brutalist-inspired design with smooth animations and a seamless user experience.
+### **Peer-to-Peer File Sharing | Reinvented for the Modern Web**
 
-![DROPZONE](https://via.placeholder.com/800x400/0f172a/fbbf24?text=DROPZONE+-+File+Sharing+Made+Easy)
+[![WebRTC](https://img.shields.io/badge/Engine-WebRTC-blue?style=for-the-badge&logo=webrtc)](https://webrtc.org/)
+[![Security](https://img.shields.io/badge/Security-DTLS%201.3-green?style=for-the-badge&logo=lock)](https://en.wikipedia.org/wiki/Datagram_Transport_Layer_Security)
+[![Tech](https://img.shields.io/badge/Stack-Vanilla%20JS-F7DF1E?style=for-the-badge&logo=javascript)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
+[![Design](https://img.shields.io/badge/Aesthetic-Glassmorphism-purple?style=for-the-badge&logo=css3)](https://glassmorphism.com/)
+
+**DropZone** is a high-performance, browser-based file-sharing application that bypasses traditional server-side bottlenecks. Built on the cutting edge of **WebRTC** and **DTLS 1.3**, it enables direct, encrypted, peer-to-peer (P2P) transfers without ever storing your sensitive data in the cloud.
+
+---
 
 ## ✨ Features
 
-### Frontend
-- **Modern UI/UX**: Distinctive brutalist-inspired design with high contrast and smooth animations
-- **Drag & Drop**: Intuitive drag-and-drop interface for file uploads
-- **Three Sharing Methods**:
-  - 📎 **Link Sharing**: Copy shareable link to clipboard
-  - 📧 **Email Sharing**: Send file link via email
-  - 📱 **QR Code**: Generate QR code for mobile sharing
-- **Progress Tracking**: Real-time upload progress with animated progress bar
-- **Responsive Design**: Works beautifully on desktop, tablet, and mobile devices
-- **No Authentication**: Fully functional for guest users
+### 🚀 **Next-Gen P2P Engine**
+- **Direct Transfers**: Send files directly between browsers. No server upload limits, no storage delays.
+- **Multi-File Support**: Transfer entire sets of files in a single session with real-time individual and total progress tracking.
+- **Smart Backpressure**: Optimized chunking (16KB) with intelligent buffer management to prevent browser memory overflow during large transfers.
 
-### Backend
-- **File Upload**: Secure file upload with 100MB limit
-- **Auto-Expiration**: Files automatically delete after 24 hours
-- **Email Integration**: Send share links via email using Nodemailer
-- **RESTful API**: Clean API endpoints for all operations
-- **File Metadata**: Track downloads and file information
+### 🔒 **Security First**
+- **DTLS 1.3 Encryption**: Every byte is encrypted using the latest Datagram Transport Layer Security (DTLS 1.3) protocol.
+- **ECDSA Certificates**: Handshake secured with P-256 elliptic curve signatures for maximum cryptographic strength.
+- **Signaling Only**: The server only facilitates the initial "handshake" (signaling) and never sees your file content.
 
-## 🚀 Quick Start
+### 🎨 **Premium Aesthetic & UX**
+- **Glassmorphism UI**: A stunning, semi-transparent interface with deep blurs and sharp accents.
+- **Dynamic Animations**: Premium icon animations, staggered logo entrances, morphing background orbs, and physics-based interactions.
+- **Quick Pick Modal System**: A sophisticated modal interface for seamless email contact management and intelligent recipient selection.
+- **Responsive Mastery**: Designed for high-end desktop monitors and mobile devices alike.
+- **Unified Sharing**: Instantly bridge the gap with dynamic QR code generation and integrated email sharing.
 
-### Prerequisites
-- Node.js (v14 or higher)
-- npm or yarn
-- SMTP credentials (for email functionality)
+---
 
-### Installation
+## 🛠️ Technology Stack
 
-1. **Clone or download the files**
+| Layer | Technology |
+| :--- | :--- |
+| **Frontend** | Vanilla JavaScript (ES6+), Modern CSS (Gradients, Blur, Transitions) |
+| **P2P Engine** | WebRTC (RTCDataChannel), ECDSA Certificates, STUN/TURN (Global Relay) |
+| **Real-time** | Socket.io (Signaling & Presence) |
+| **Backend** | Node.js, Express, Nodemailer |
+| **Database** | MongoDB (Mongoose) for session state and history |
+| **Security** | DTLS 1.3 (Negotiated via browser engine) |
 
-2. **Install dependencies**
+---
+
+## 🚦 Quick Start
+
+### 1. Prerequisites
+- **Node.js** (v16.x or higher)
+- **MongoDB** (Local or Atlas)
+- **SMTP credentials** (for Email Sharing)
+
+### 2. Installation
 ```bash
+git clone https://github.com/pranav662/DropZone.git
+cd DropZone
 npm install
 ```
 
-3. **Configure environment variables**
-```bash
-cp .env.example .env
-```
-
-Edit `.env` with your SMTP settings:
+### 3. Configuration
+Rename `.env.example` to `.env` and configure your keys:
 ```env
 PORT=3000
+MONGO_URI=your_mongodb_connection_string
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=your-email@gmail.com
 SMTP_PASS=your-app-password
 ```
 
-> **Gmail Users**: You need to use an [App Password](https://support.google.com/accounts/answer/185833) instead of your regular password.
-
-4. **Create the public folder structure**
+### 4. Run
 ```bash
-mkdir -p public
-mv index.html public/
-mv styles.css public/
-mv script.js public/
-```
-
-5. **Start the server**
-```bash
+# Production mode
 npm start
-```
 
-Or for development with auto-reload:
-```bash
+# Development with hot-reload
 npm run dev
 ```
 
-6. **Open your browser**
-```
-http://localhost:3000
-```
+---
 
-## 📁 Project Structure
+## 📖 How It Works
 
-```
-dropzone-file-sharing/
-├── public/
-│   ├── index.html      # Main HTML file
-│   ├── styles.css      # CSS styles
-│   └── script.js       # Client-side JavaScript
-├── uploads/            # Uploaded files (auto-created)
-├── server.js           # Node.js Express server
-├── package.json        # Dependencies
-├── .env.example        # Environment variables template
-├── .gitignore         # Git ignore rules
-└── README.md          # This file
-```
+1. **Create a Room**: Drag and drop your files into the glassmorphic drop zone.
+2. **Share the Link**: Copy the unique room URL or generate a QR code.
+3. **P2P Connection**: When the recipient opens the link, a direct WebRTC data channel is established.
+4. **Encrypted Transfer**: Files are chunked and streamed directly to the recipient over a secure DTLS 1.3 tunnel.
+5. **Auto-Clean**: The signaling session expires automatically after the transfer is complete.
 
-## 🎨 Design Philosophy
+---
 
-The application features a **refined brutalist aesthetic** with:
-- Bold typography (Space Mono + DM Sans)
-- High contrast dark-to-light gradient background
-- Sharp borders and dramatic shadows
-- Amber accent colors
-- Smooth state transitions
-- Mobile-first responsive design
+## 🛡️ Security Stats Monitoring
+DropZone includes a real-time security monitor that reports the negotiated TLS version and cipher suite for every P2P session, giving users peace of mind that their transfer is meeting modern security standards.
 
-## 🔧 API Endpoints
-
-### Upload File
-```http
-POST /api/upload
-Content-Type: multipart/form-data
-
-Response:
-{
-  "success": true,
-  "shareId": "Xa9kP2mQ",
-  "shareUrl": "http://localhost:3000/download/Xa9kP2mQ",
-  "expiresAt": "2024-01-02T12:00:00.000Z"
-}
-```
-
-### Download File
-```http
-GET /download/:shareId
-```
-
-### Send Email
-```http
-POST /api/send-email
-Content-Type: application/json
-
-{
-  "shareUrl": "http://localhost:3000/download/Xa9kP2mQ",
-  "recipientEmail": "friend@example.com",
-  "senderEmail": "you@example.com",
-  "fileName": "document.pdf"
-}
-```
-
-### Get File Info
-```http
-GET /api/file/:shareId
-
-Response:
-{
-  "originalName": "document.pdf",
-  "size": 1048576,
-  "uploadedAt": "2024-01-01T12:00:00.000Z",
-  "expiresAt": "2024-01-02T12:00:00.000Z",
-  "downloadCount": 5
-}
-```
-
-## 🔒 Security Features
-
-- File size limit (100MB)
-- Auto-deletion after 24 hours
-- Unique share IDs using crypto
-- CORS protection
-- Input validation
-- Secure file storage
-
-## 🎯 Browser Support
-
-- Chrome (latest)
-- Firefox (latest)
-- Safari (latest)
-- Edge (latest)
-- Mobile browsers
-
-## 📝 To-Do / Future Enhancements
-
-- [ ] Real QR code generation (using qrcode.js)
-- [ ] Database integration (MongoDB/PostgreSQL)
-- [ ] File encryption
-- [ ] Password-protected links
-- [ ] Bulk file uploads
-- [ ] Upload progress for actual files
-- [ ] User accounts (optional)
-- [ ] File preview
-- [ ] Custom expiration times
-- [ ] Analytics dashboard
+---
 
 ## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
+We welcome contributions! Please feel free to open issues or submit pull requests.
 
 ## 📄 License
+Released under the [MIT License](LICENSE).
 
-MIT License - feel free to use this project for personal or commercial purposes.
+---
 
-## 💡 Tips
-
-### For Gmail Users
-1. Enable 2-Step Verification in your Google Account
-2. Generate an App Password: [Google Account Security](https://myaccount.google.com/security)
-3. Use the generated 16-character password in your `.env` file
-
-### For Production Deployment
-- Use environment variables for sensitive data
-- Set up a proper database (MongoDB, PostgreSQL)
-- Configure a reverse proxy (nginx)
-- Use HTTPS
-- Set up proper logging
-- Implement rate limiting
-- Add file validation
-- Consider using cloud storage (AWS S3, Azure Blob)
-
-## 🙏 Acknowledgments
-
-- Design inspired by brutalist and Swiss design principles
-- Icons via inline SVG
-- Fonts: Space Mono & DM Sans from Google Fonts
+<p align="center">
+  Built with ❤️ for a faster, more secure web.
+</p>
+ Mono & DM Sans from Google Fonts
 
 ---
 
