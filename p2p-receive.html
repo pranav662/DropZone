@@ -208,7 +208,7 @@
            HEADER
            ============================================================ */
         .header {
-            padding: 28px 36px;
+            padding: 24px 32px;
             border-bottom: 1px solid rgba(255,255,255,0.05);
             background: rgba(255,255,255,0.012);
             position: relative;
@@ -325,7 +325,7 @@
            CONTENT
            ============================================================ */
         .content {
-            padding: 40px 36px;
+            padding: 28px 32px;
             position: relative;
             z-index: 1;
         }
@@ -335,7 +335,7 @@
            ============================================================ */
         .status-section {
             text-align: center;
-            margin-bottom: 40px;
+            margin-bottom: 32px;
         }
 
         /* Outer wrapper for rings + icon */
@@ -343,7 +343,7 @@
             position: relative;
             width: 108px;
             height: 108px;
-            margin: 0 auto 28px;
+            margin: 0 auto 20px;
         }
 
         /* Outer spinning ring */
@@ -427,27 +427,59 @@
         .status-icon.transferring .status-svg {
             animation: iconPulse 1s ease-in-out infinite;
         }
-        @keyframes iconPulse {
-            0%, 100% { transform: scale(1); }
-            50%       { transform: scale(1.1); filter: drop-shadow(0 0 8px rgba(59,130,246,0.7)); }
+        /* ─── Premium Icon Animations ─── */
+        @keyframes drawPath {
+            to { stroke-dashoffset: 0; }
+        }
+        @keyframes orbitRotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        @keyframes pulseGlowIcon {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+        }
+        @keyframes streamData {
+            0% { transform: translateY(10px); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translateY(-10px); opacity: 0; }
         }
 
-        /* connected draw checkmark */
-        .check-path {
-            stroke-dasharray: 50;
-            stroke-dashoffset: 50;
+        .status-svg {
+            transition: all 0.4s var(--ease-smooth);
         }
-        .status-icon.connected .check-path {
-            animation: drawCheck 0.5s var(--ease-spring) 0.1s forwards;
-        }
-        @keyframes drawCheck { to { stroke-dashoffset: 0; } }
 
-        /* complete glow burst */
-        @keyframes successBurst {
-            0%   { box-shadow: 0 0 0 0 rgba(16,185,129,0.6), 0 16px 40px rgba(0,0,0,0.5); }
-            40%  { box-shadow: 0 0 0 24px rgba(16,185,129,0), 0 16px 40px rgba(0,0,0,0.5); }
-            100% { box-shadow: 0 0 20px rgba(16,185,129,0.15), 0 16px 40px rgba(0,0,0,0.5); }
+        /* Connecting: Orbital dots */
+        .icon-path-orbit {
+            transform-origin: center;
+            animation: orbitRotate 1.5s linear infinite;
         }
+
+        /* Connected: Springy check */
+        .icon-path-check {
+            stroke-dasharray: 40;
+            stroke-dashoffset: 40;
+        }
+        .status-icon.connected .icon-path-check {
+            animation: drawPath 0.6s var(--ease-bounce) forwards;
+        }
+
+        /* Transferring: Data stream */
+        .icon-path-stream {
+            animation: streamData 1.2s linear infinite;
+        }
+        .icon-path-stream:nth-child(2) { animation-delay: 0.4s; }
+        .icon-path-stream:nth-child(3) { animation-delay: 0.8s; }
+
+        /* Error: Sharp cross */
+        .icon-path-cross {
+            stroke-dasharray: 30;
+            stroke-dashoffset: 30;
+        }
+        .status-icon.error .icon-path-cross {
+            animation: drawPath 0.4s ease-out forwards;
+        }
+        .status-icon.error .icon-path-cross:nth-child(2) { animation-delay: 0.1s; }
 
         .status-title {
             font-size: 24px;
@@ -961,7 +993,7 @@
             align-items: center;
             justify-content: center;
             width: 100%;
-            padding: 90px 24px 80px; /* top = header height, bottom = footer height */
+            padding: 70px 24px 60px; /* top reduced from 90, bottom from 80 */
             box-sizing: border-box;
         }
 
@@ -1283,66 +1315,68 @@
             if (bytes === 0) return '0 B';
             const k = 1024;
             const sizes = ['B', 'KB', 'MB', 'GB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-        }
-
-        // ─────────────────────────────────────────────────────────
-        // STATUS ICON SVGs — clean, per-state
-        // ─────────────────────────────────────────────────────────
-        const STATUS_ICONS = {
-            connecting: `<svg class="status-svg spin-icon" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="9" stroke-opacity="0.2"/>
-                <path d="M12 3 A9 9 0 0 1 21 12" stroke-width="2.2"/>
+            const i = Math.floor(Math.log        const STATUS_ICONS = {
+            connecting: `<svg class="status-svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <circle cx="12" cy="12" r="9" stroke="rgba(255,255,255,0.1)"/>
+                <path class="icon-path-orbit" d="M12 3 A9 9 0 0 1 21 12"/>
+                <circle class="icon-path-orbit" cx="12" cy="3" r="2" fill="currentColor" stroke="none"/>
             </svg>`,
-            connected: `<svg class="status-svg" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline class="check-path" points="20 6 9 17 4 12"/>
+            connected: `<svg class="status-svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path class="icon-path-check" d="M20 6L9 17L4 12"/>
             </svg>`,
-            transferring: `<svg class="status-svg" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M5 12h14M12 5l7 7-7 7"/>
+            transferring: `<svg class="status-svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3V16M12 16L17 11M12 16L7 11"/>
+                <circle class="icon-path-stream" cx="12" cy="19" r="1" fill="currentColor" stroke="none"/>
+                <circle class="icon-path-stream" cx="12" cy="22" r="1.5" fill="currentColor" stroke="none"/>
+                <path d="M5 21H19" stroke-opacity="0.2"/>
             </svg>`,
-            complete: `<svg class="status-svg" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                <polyline class="check-path" points="22 4 12 14.01 9 11.01"/>
+            complete: `<svg class="status-svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path class="icon-path-check" d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                <polyline class="icon-path-check" points="22 4 12 14.01 9 11.01"/>
             </svg>`,
-            'sender-offline': `<svg class="status-svg" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M18.36 6.64A9 9 0 1 1 5.64 19.36"/>
-                <polyline points="23 4 23 10 17 10"/>
+            'sender-offline': `<svg class="status-svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <path d="M1 1l22 22M16.7 3.3a8.5 8.5 0 0 1 5 5M8.5 21.5a8.5 8.5 0 0 1-5-5"/>
+                <path d="M5 5a8.5 8.5 0 0 0 0 12M19 19a8.5 8.5 0 0 0 0-12" opacity="0.3"/>
             </svg>`,
-            error: `<svg class="status-svg" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="9"/>
-                <line x1="12" y1="8" x2="12" y2="12"/>
-                <line x1="12" y1="16" x2="12.01" y2="16"/>
+            error: `<svg class="status-svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                <path class="icon-path-cross" d="M18 6L6 18"/>
+                <path class="icon-path-cross" d="M6 6l12 12"/>
             </svg>`,
         };
 
         function setStatus(state, text, sub) {
             const statusIcon = document.getElementById('statusIcon');
-            statusIcon.innerHTML  = STATUS_ICONS[state] || STATUS_ICONS.connecting;
-            statusIcon.className  = 'status-icon ' + state;
             
-            statusText.textContent = text;
-            statusSub.textContent  = sub;
+            // Fade out current content
+            statusIcon.style.opacity = '0';
+            statusIcon.style.transform = 'scale(0.8)';
 
-            // Adjust outer ring speed and state
-            const dur = state === 'transferring' ? '0.7s' : state === 'error' ? '5s' : '2.4s';
-            const op  = state === 'error' ? '0.3' : '1';
-            statusRingOuter.style.animationDuration = dur;
-            statusRingOuter.style.opacity = op;
+            setTimeout(() => {
+                statusIcon.innerHTML  = STATUS_ICONS[state] || STATUS_ICONS.connecting;
+                statusIcon.className  = 'status-icon ' + state;
+                
+                statusText.textContent = text;
+                statusSub.textContent  = sub;
 
-            // Burst animation on complete & remove spinner rings
-            if (state === 'complete' || state === 'connected') {
-                statusIcon.style.animation = 'successBurst 0.7s ease-out forwards';
-            }
+                // Adjust outer ring speed and state
+                const dur = state === 'transferring' ? '0.7s' : state === 'error' ? '5s' : '2.4s';
+                const op  = state === 'error' ? '0.3' : '1';
+                statusRingOuter.style.animationDuration = dur;
+                statusRingOuter.style.opacity = op;
 
-            if (state === 'complete' || state === 'error') {
-                statusRingOuter.style.display = 'none';
-                document.querySelector('.status-ring-inner').style.display = 'none';
-                document.getElementById('newTransferBtn').style.display = 'block';
-            } else {
-                statusRingOuter.style.display = 'block';
-                document.querySelector('.status-ring-inner').style.display = 'block';
-            }
+                // Fade in new content
+                statusIcon.style.opacity = '1';
+                statusIcon.style.transform = 'scale(1)';
+
+                if (state === 'complete' || state === 'error') {
+                    statusRingOuter.style.display = 'none';
+                    document.querySelector('.status-ring-inner').style.display = 'none';
+                    document.getElementById('newTransferBtn').style.display = 'block';
+                } else {
+                    statusRingOuter.style.display = 'block';
+                    document.querySelector('.status-ring-inner').style.display = 'block';
+                }
+            }, 300);
         }
 
         // ─────────────────────────────────────────────────────────
