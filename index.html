@@ -107,18 +107,16 @@
                                 <div class="icon-orbit-ring"></div>
 
                                 <!-- The visible icon box -->
-                                <div class="icon-container icon-upload">
-                                    <svg class="animated-icon upload-svg" width="42" height="42" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                                        <defs>
-                                            <linearGradient id="iconGrad" x1="0" y1="0" x2="1" y2="1">
-                                                <stop offset="0%" stop-color="#3b82f6"/>
-                                                <stop offset="100%" stop-color="#6366f1"/>
-                                            </linearGradient>
-                                        </defs>
-                                        <path class="icon-path-base" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke="url(#iconGrad)"></path>
-                                        <polyline class="icon-path-arrow" points="17 8 12 3 7 8" stroke="url(#iconGrad)"></polyline>
-                                        <line class="icon-path-stem" x1="12" y1="3" x2="12" y2="15" stroke="url(#iconGrad)"></line>
-                                    </svg>
+                                <div class="icon-container icon-upload" style="background:transparent;border:none;box-shadow:none;">
+                                    <lottie-player
+                                        id="uploadLottie"
+                                        src="https://assets4.lottiefiles.com/packages/lf20_zzqkdkpn.json"
+                                        background="transparent"
+                                        speed="0.8"
+                                        loop
+                                        autoplay
+                                        style="width:88px;height:88px;margin:-18px;"
+                                    ></lottie-player>
                                 </div>
                             </div>
 
@@ -441,6 +439,7 @@
     </div>
 
     <!-- Scripts -->
+    <script src="https://unpkg.com/@lottiefiles/lottie-player@2.0.8/dist/lottie-player.js"></script>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script src="webrtc.js?v=19"></script>
     <script src="animations.js?v=19"></script>

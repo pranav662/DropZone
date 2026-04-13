@@ -336,8 +336,8 @@
         /* Outer wrapper for rings + icon */
         .status-icon-wrap {
             position: relative;
-            width: 108px;
-            height: 108px;
+            width: 130px;
+            height: 130px;
             margin: 0 auto 28px;
         }
 
@@ -363,6 +363,18 @@
         }
 
         @keyframes spinRing { to { transform: rotate(360deg); } }
+
+        /* Lottie animation sits centered in the ring */
+        .status-lottie-wrap {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2;
+        }
+        .status-lottie-wrap lottie-player {
+            display: block;
+        }
 
         .status-icon {
             width: 108px;
@@ -1162,15 +1174,20 @@
             <div class="content">
                 <!-- ── Status Section ── -->
                 <div class="status-section" id="statusSection">
-                    <div class="status-icon-wrap">
+                    <div class="status-icon-wrap" id="statusIconWrap">
                         <div class="status-ring-outer" id="statusRingOuter"></div>
                         <div class="status-ring-inner"></div>
-                        <div class="status-icon connecting" id="statusIcon">
-                            <!-- Connecting icon (clock/spinner) — swapped by JS -->
-                            <svg class="status-svg spin-icon" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="12" cy="12" r="9" stroke-opacity="0.25"/>
-                                <path d="M12 3 A9 9 0 0 1 21 12" stroke-width="2"/>
-                            </svg>
+                        <!-- Lottie animation container -->
+                        <div class="status-lottie-wrap" id="statusLottieWrap">
+                            <lottie-player
+                                id="statusLottie"
+                                src="https://assets9.lottiefiles.com/packages/lf20_p8bfn5to.json"
+                                background="transparent"
+                                speed="1"
+                                loop
+                                autoplay
+                                style="width:120px;height:120px;"
+                            ></lottie-player>
                         </div>
                     </div>
                     <h2 class="status-title" id="statusText">Connecting to sender...</h2>
@@ -1249,6 +1266,7 @@
 
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script src="/webrtc.js?v=19"></script>
+    <script src="https://unpkg.com/@lottiefiles/lottie-player@2.0.8/dist/lottie-player.js"></script>
     <script>
         const roomId = window.location.pathname.split('/p2p/')[1] || window.location.search.split('?room=')[1];
 
@@ -1281,51 +1299,52 @@
             return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
         }
 
-        // ─────────────────────────────────────────────────────────
-        // STATUS ICON SVGs — clean, per-state
-        // ─────────────────────────────────────────────────────────
-        const STATUS_ICONS = {
-            connecting: `<svg class="status-svg spin-icon" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="9" stroke-opacity="0.2"/>
-                <path d="M12 3 A9 9 0 0 1 21 12" stroke-width="2.2"/>
-            </svg>`,
-            connected: `<svg class="status-svg" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline class="check-path" points="20 6 9 17 4 12"/>
-            </svg>`,
-            transferring: `<svg class="status-svg" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M5 12h14M12 5l7 7-7 7"/>
-            </svg>`,
-            complete: `<svg class="status-svg" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                <polyline class="check-path" points="22 4 12 14.01 9 11.01"/>
-            </svg>`,
-            'sender-offline': `<svg class="status-svg" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M18.36 6.64A9 9 0 1 1 5.64 19.36"/>
-                <polyline points="23 4 23 10 17 10"/>
-            </svg>`,
-            error: `<svg class="status-svg" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="9"/>
-                <line x1="12" y1="8" x2="12" y2="12"/>
-                <line x1="12" y1="16" x2="12.01" y2="16"/>
-            </svg>`,
+        // Lottie animation URLs for each state
+        const LOTTIE_SRCS = {
+            connecting:      'https://assets9.lottiefiles.com/packages/lf20_p8bfn5to.json',
+            connected:       'https://assets3.lottiefiles.com/packages/lf20_jbrw3hcz.json',
+            transferring:    'https://assets5.lottiefiles.com/packages/lf20_yyrbwmdq.json',
+            complete:        'https://assets2.lottiefiles.com/packages/lf20_lk80fpsm.json',
+            'sender-offline':'https://assets9.lottiefiles.com/packages/lf20_yzywqzns.json',
+            error:           'https://assets5.lottiefiles.com/packages/lf20_qnMhMNiS1M.json',
+        };
+
+        const LOTTIE_LOOP = {
+            connecting: true,
+            connected: false,
+            transferring: true,
+            complete: false,
+            'sender-offline': true,
+            error: false
         };
 
         function setStatus(state, text, sub) {
-            statusIcon.innerHTML  = STATUS_ICONS[state] || STATUS_ICONS.connecting;
-            statusIcon.className  = 'status-icon ' + state;
+            // Update Lottie animation
+            const lottie = document.getElementById('statusLottie');
+            const src = LOTTIE_SRCS[state] || LOTTIE_SRCS.connecting;
+            if (lottie && lottie.src !== src) {
+                lottie.src = src;
+            }
+            if (lottie) {
+                if (LOTTIE_LOOP[state]) {
+                    lottie.loop = true;
+                    lottie.removeAttribute('count');
+                } else {
+                    lottie.loop = false;
+                    lottie.count = 1;
+                }
+                lottie.load && lottie.load(src);
+            }
+
             statusText.textContent = text;
             statusSub.textContent  = sub;
 
-            // Adjust outer ring speed
+            // Adjust outer ring speed and state
             const dur = state === 'transferring' ? '0.7s' : state === 'error' ? '5s' : '2.4s';
             const op  = state === 'error' ? '0.3' : '1';
             statusRingOuter.style.animationDuration = dur;
             statusRingOuter.style.opacity = op;
 
-            // Burst animation on complete & remove spinner rings
-            if (state === 'complete' || state === 'connected') {
-                statusIcon.style.animation = 'successBurst 0.7s ease-out forwards';
-            }
             if (state === 'complete') {
                 statusRingOuter.style.display = 'none';
                 document.querySelector('.status-ring-inner').style.display = 'none';
