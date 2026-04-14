@@ -990,10 +990,10 @@
         .recv-page-body {
             flex: 1;
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             justify-content: center;
             width: 100%;
-            padding: 70px 24px 60px; /* top reduced from 90, bottom from 80 */
+            padding: 90px 24px 60px;
             box-sizing: border-box;
         }
 
@@ -1315,7 +1315,11 @@
             if (bytes === 0) return '0 B';
             const k = 1024;
             const sizes = ['B', 'KB', 'MB', 'GB'];
-            const i = Math.floor(Math.log        const STATUS_ICONS = {
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        const STATUS_ICONS = {
             connecting: `<svg class="status-svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
                 <circle cx="12" cy="12" r="9" stroke="rgba(255,255,255,0.1)"/>
                 <path class="icon-path-orbit" d="M12 3 A9 9 0 0 1 21 12"/>
