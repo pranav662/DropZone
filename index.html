@@ -408,110 +408,154 @@
 
     <div class="details-wrapper" id="detailsSection">
         <header class="details-header">
-            <h2>What is DropZone?</h2>
-            <p>A secure, independent peer-to-peer file sharing protocol.</p>
+            <h2>Neural P2P Protocol</h2>
+            <p>Experience the future of secure, independent file sharing.</p>
         </header>
 
-        <!-- P2P Diagram -->
+        <!-- Neural P2P Diagram -->
         <div class="p2p-diagram-container">
+            <!-- Signaling Hub (Top) -->
+            <div class="signaling-hub">
+                <div class="hub-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent-indigo)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v8m0 0l-4-4m4 4l4-4M12 22v-8m0 0l-4 4m4-4l4 4"/></svg>
+                </div>
+                <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--accent-indigo);">Signaling Server</span>
+            </div>
+            
+            <div class="signaling-path left"></div>
+            <div class="signaling-path right"></div>
+
             <div class="p2p-visual">
                 <div class="node">
                     <div class="node-icon">
-                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--accent-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                        <svg width="40" height="40" viewBox="0 0 64 64" fill="none">
+                            <rect x="12" y="16" width="40" height="28" rx="4" stroke="url(#logoGrad)" stroke-width="3"/>
+                            <path d="M28 44h8M32 44v8" stroke="url(#logoGrad)" stroke-width="3" stroke-linecap="round"/>
+                            <circle cx="32" cy="30" r="4" fill="url(#logoGrad)" opacity="0.6">
+                                <animate attributeName="r" values="3;5;3" dur="2s" repeatCount="indefinite" />
+                            </circle>
+                        </svg>
                     </div>
-                    <span>Sender</span>
+                    <span>Secure Host</span>
                 </div>
+
                 <div class="connection-path">
-                    <div class="transfer-particle"></div>
-                    <div class="transfer-particle" style="animation-delay: -1.5s"></div>
+                    <div class="burst-particle"></div>
+                    <div class="burst-particle" style="animation-delay: -0.8s"></div>
+                    <div class="burst-particle" style="animation-delay: -1.6s"></div>
                 </div>
+
                 <div class="node">
                     <div class="node-icon" style="border-color: var(--accent-secondary)">
-                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--accent-secondary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+                        <svg width="40" height="40" viewBox="0 0 64 64" fill="none">
+                            <rect x="18" y="10" width="28" height="44" rx="6" stroke="var(--accent-secondary)" stroke-width="3"/>
+                            <circle cx="32" cy="48" r="3" fill="var(--accent-secondary)" opacity="0.6"/>
+                            <path d="M28 20h8" stroke="var(--accent-secondary)" stroke-width="2" stroke-linecap="round" opacity="0.4"/>
+                        </svg>
                     </div>
-                    <span>Receiver</span>
+                    <span>Recipient</span>
                 </div>
             </div>
-            <p style="text-align: center; color: var(--slate-400); font-size: 14px; margin-top: 40px; max-width: 500px; margin-left: auto; margin-right: auto;">
-                DropZone prioritizes your privacy. We store nothing online: simply close your browser to stop sharing.
+            <p style="text-align: center; color: var(--slate-400); font-size: 14px; margin-top: 50px; max-width: 550px; margin-left: auto; margin-right: auto; line-height: 1.6;">
+                The signaling server only facilitates the initial handshake. Once connected, 
+                your data flows through a **Direct Neural Tunnel** between browsers, 
+                protected by DTLS 1.3 encryption.
             </p>
         </div>
 
-        <!-- Feature 1 -->
+        <!-- Feature 1: Straight from Device -->
         <div class="feature-row">
             <div class="feature-content">
-                <h3>Straight from your device</h3>
+                <h3>Direct Neural Link</h3>
                 <p>
-                    When you close the browser tab your files are no longer accessible, 
-                    minimizing the risk of anyone getting unwanted access. 
-                    DropZone uses WebRTC technology to find the shortest path, 
-                    meaning sometimes your data doesn't even have to leave the building!
+                    By bypassing intermediate servers, DropZone establishes a high-speed orbital 
+                    connection directly between devices. This minimizes latency and ensures that 
+                    your files never exist in a vulnerable resting state.
                 </p>
             </div>
             <div class="feature-visual">
+                <div class="neural-aura"></div>
                 <div class="feature-icon-wrapper">
-                    <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="url(#iconGrad)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M5 12l5 5L20 7"></path>
+                    <svg class="layered-svg" width="80" height="80" viewBox="0 0 64 64" fill="none">
+                        <defs>
+                            <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                                <feGaussianBlur stdDeviation="3" result="blur"/>
+                                <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                            </filter>
+                        </defs>
+                        <circle cx="32" cy="32" r="28" stroke="url(#iconGrad)" stroke-width="1" stroke-dasharray="4 6" opacity="0.4"/>
+                        <path d="M20 32a12 12 0 1 0 24 0 12 12 0 1 0-24 0" stroke="url(#iconGrad)" stroke-width="4" filter="url(#glow)"/>
+                        <circle cx="32" cy="32" r="6" fill="url(#iconGrad)">
+                            <animate attributeName="opacity" values="0.4;1;0.4" dur="2s" repeatCount="indefinite" />
+                        </circle>
+                        <path d="M32 12v6M32 46v6M12 32h6M46 32h6" stroke="url(#iconGrad)" stroke-width="2" stroke-linecap="round"/>
                     </svg>
                 </div>
             </div>
         </div>
 
-        <!-- Feature 2 -->
+        <!-- Feature 2: No Size Limits -->
         <div class="feature-row alt">
             <div class="feature-content">
-                <h3>No more file size limits</h3>
+                <h3>Infinite Data Bridge</h3>
                 <p>
-                    Because we don't store the data, there's no need for file size limits. 
-                    Just share files of any size or whatever amount. 
-                    As long as you keep an eye on your own data usage and browser memory.
+                    Break free from the constraints of cloud storage quotas. Our protocol 
+                    supports infinite stream sizes, allowing you to transfer terabytes as 
+                    easily as kilobytes, limited only by your hardware.
                 </p>
             </div>
             <div class="feature-visual">
+                <div class="neural-aura" style="background: radial-gradient(circle at center, rgba(45,212,191,0.1) 0%, transparent 60%);"></div>
                 <div class="feature-icon-wrapper">
-                    <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="url(#iconGrad)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 2v20M2 12h20"></path>
-                        <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"></path>
+                    <svg class="layered-svg" width="80" height="80" viewBox="0 0 64 64" fill="none">
+                        <path d="M12 32c0-8 6-14 14-14s14 14 26 14 14-6 14-14-6-14-14-14-14 14-26 14-14-6-14-14" transform="rotate(-30 32 32)" stroke="url(#logoGrad)" stroke-width="5" stroke-linecap="round" filter="url(#glow)"/>
+                        <circle cx="32" cy="32" r="2" fill="white">
+                            <animateMotion path="M12 32c0-8 6-14 14-14s14 14 26 14" dur="3s" repeatCount="indefinite" />
+                        </circle>
                     </svg>
                 </div>
             </div>
         </div>
 
-        <!-- Feature 3 -->
+        <!-- Feature 3: Security -->
         <div class="feature-row">
             <div class="feature-content">
-                <h3>Only the receiver can access</h3>
+                <h3>Neural Shielding</h3>
                 <p>
-                    Only you and the receiver can access your files. Your data is encrypted 
-                    end-to-end, and can only be read by your receiver. 
-                    DropZone currently uses a modern implementation of DTLS 1.3.
+                    Every byte is encapsulated in a DTLS 1.3 neural envelope. Our keys are 
+                    ephemeral, meaning even if a future link is captured, past transfers remain 
+                    mathematically unreachable.
                 </p>
             </div>
             <div class="feature-visual">
+                <div class="neural-aura" style="background: radial-gradient(circle at center, rgba(99,102,241,0.1) 0%, transparent 60%);"></div>
                 <div class="feature-icon-wrapper">
-                    <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="url(#iconGrad)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    <svg class="layered-svg" width="80" height="80" viewBox="0 0 64 64" fill="none">
+                        <path d="M32 8l20 8v16c0 14-20 24-20 24S12 46 12 32V16l20-8z" fill="rgba(99,102,241,0.05)" stroke="url(#iconGrad)" stroke-width="3" filter="url(#glow)"/>
+                        <path d="M24 28l6 6 12-12" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>
+                        <circle cx="32" cy="32" r="26" stroke="white" stroke-width="0.5" opacity="0.1"/>
                     </svg>
                 </div>
             </div>
         </div>
 
-        <!-- Feature 4 -->
+        <!-- Feature 4: Eco -->
         <div class="feature-row alt">
             <div class="feature-content">
-                <h3>Low environmental impact</h3>
+                <h3>Ecological Pulse</h3>
                 <p>
-                    Because we don't store data, we don't need bulky servers, and that saves 
-                    a lot of energy. By using DropZone you'll have a much smaller carbon 
-                    footprint than when using a cloud storage provider.
+                    Traditional cloud storage consumes massive amounts of energy for maintenance. 
+                    DropZone's direct P2P model eliminates the need for data-centers-at-rest, 
+                    reducing your digital carbon footprint by up to 90%.
                 </p>
             </div>
             <div class="feature-visual">
+                <div class="neural-aura" style="background: radial-gradient(circle at center, rgba(16,185,129,0.1) 0%, transparent 60%);"></div>
                 <div class="feature-icon-wrapper">
-                    <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="url(#iconGrad)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 3.5 1.08 12.48A7 7 0 0 1 11 20z"></path>
-                        <path d="M11 20a7 7 0 0 1-7-7c0-3.87 3.13-7 7-7"></path>
+                    <svg class="layered-svg" width="80" height="80" viewBox="0 0 64 64" fill="none">
+                        <path d="M32 52c11 0 20-9 20-20 0-11-20-24-20-24S12 21 12 32c0 11 9 20 20 20z" stroke="#10b981" stroke-width="3" filter="url(#glow)"/>
+                        <path d="M32 52V28M32 40l-8-4M32 45l10-5" stroke="#10b981" stroke-width="2" stroke-linecap="round"/>
+                        <circle cx="32" cy="32" r="15" stroke="white" stroke-width="0.5" opacity="0.1" stroke-dasharray="2 4"/>
                     </svg>
                 </div>
             </div>
