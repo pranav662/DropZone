@@ -2310,7 +2310,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
     width: 100%;
     max-width: 1100px;
     margin: 80px auto 120px;
-    padding: 0 60px;
+    padding: 0 40px;
     position: relative;
     z-index: 10;
 }
@@ -2385,7 +2385,8 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
 
 .signaling-path {
     position: absolute;
-    width: 140px;
+    width: 25%;
+    max-width: 140px;
     height: 100px;
     border-top: 1px dashed rgba(255,255,255,0.15);
     border-radius: 50%;
@@ -2393,8 +2394,8 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
     z-index: 1;
 }
 
-.signaling-path.left  { left: 20%; transform: rotate(-20deg); }
-.signaling-path.right { right: 20%; transform: rotate(20deg); }
+.signaling-path.left  { left: 15%; transform: rotate(-25deg); }
+.signaling-path.right { right: 15%; transform: rotate(25deg); }
 
 .node {
     width: 140px;
@@ -2532,12 +2533,16 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
 
 /* Responsive */
 @media (max-width: 900px) {
+    .details-wrapper { padding: 0 20px; margin-top: 40px; }
     .feature-row, .feature-row.alt {
         flex-direction: column;
         gap: 60px;
         text-align: center;
     }
     .feature-visual { width: 300px; height: 300px; }
+    .node { width: 100px; }
+    .node-icon { width: 70px; height: 70px; }
+    .node span { font-size: 12px; }
     .signaling-hub, .signaling-path { display: none; }
 }
 
