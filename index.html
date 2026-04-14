@@ -414,19 +414,69 @@
 
         <!-- Neural P2P Diagram -->
         <div class="p2p-diagram-container">
-            <!-- Signaling Hub (Top) -->
-            <div class="signaling-hub">
+            <svg class="diagram-svg" viewBox="0 0 800 400" preserveAspectRatio="xMidYMid meet">
+                <defs>
+                    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                        <polygon points="0 0, 10 3.5, 0 7" fill="rgba(255,255,255,0.2)" />
+                    </marker>
+                    <linearGradient id="tunnelGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stop-color="#3b82f6" stop-opacity="0" />
+                        <stop offset="50%" stop-color="#2dd4bf" stop-opacity="1" />
+                        <stop offset="100%" stop-color="#3b82f6" stop-opacity="0" />
+                    </linearGradient>
+                    <filter id="diagramGlow" x="-20%" y="-20%" width="140%" height="140%">
+                        <feGaussianBlur stdDeviation="4" result="blur"/>
+                        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                    </filter>
+                </defs>
+
+                <!-- Handshake Paths (Faint) -->
+                <path id="pathHandshakeLeft" d="M150 300 Q400 150 400 70" stroke="rgba(255,255,255,0.05)" stroke-width="2" stroke-dasharray="4 6" fill="none" marker-end="url(#arrowhead)"/>
+                <path id="pathHandshakeRight" d="M650 300 Q400 150 400 70" stroke="rgba(255,255,255,0.05)" stroke-width="2" stroke-dasharray="4 6" fill="none" marker-end="url(#arrowhead)"/>
+                
+                <!-- Direct Neural Tunnel (Bold) -->
+                <path id="pathDirect" d="M180 300 L620 300" stroke="url(#tunnelGrad)" stroke-width="4" fill="none" filter="url(#diagramGlow)"/>
+                
+                <!-- Labels -->
+                <text x="220" y="180" fill="rgba(255,255,255,0.3)" font-size="10" filter="url(#diagramGlow)" transform="rotate(-30 220 180)">STUN/TURN Signaling</text>
+                <text x="580" y="180" fill="rgba(255,255,255,0.3)" font-size="10" filter="url(#diagramGlow)" transform="rotate(30 580 180)">ICE Connection</text>
+                <text x="400" y="280" fill="var(--accent-secondary)" font-size="11" text-anchor="middle" font-weight="bold" letter-spacing="2" filter="url(#diagramGlow)">DIRECT P2P TUNNEL (DTLS 1.3)</text>
+
+                <!-- Signaling Particles -->
+                <circle r="2" fill="#6366f1">
+                    <animateMotion dur="4s" repeatCount="indefinite">
+                        <mpath href="#pathHandshakeLeft"/>
+                    </animateMotion>
+                </circle>
+                <circle r="2" fill="#6366f1">
+                    <animateMotion dur="4s" begin="2s" repeatCount="indefinite">
+                        <mpath href="#pathHandshakeRight"/>
+                    </animateMotion>
+                </circle>
+
+                <!-- Transfer Particles (Speed) -->
+                <rect width="30" height="2" fill="url(#tunnelGrad)">
+                    <animateMotion dur="1.5s" repeatCount="indefinite">
+                        <mpath href="#pathDirect"/>
+                    </animateMotion>
+                </rect>
+                <rect width="20" height="1" fill="url(#tunnelGrad)" opacity="0.6">
+                    <animateMotion dur="1.2s" begin="0.4s" repeatCount="indefinite">
+                        <mpath href="#pathDirect"/>
+                    </animateMotion>
+                </rect>
+            </svg>
+
+            <!-- Physical Node Elements (Overlayed for better interaction) -->
+            <div class="signaling-hub" style="top: 20px;">
                 <div class="hub-icon">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent-indigo)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v8m0 0l-4-4m4 4l4-4M12 22v-8m0 0l-4 4m4-4l4 4"/></svg>
                 </div>
-                <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--accent-indigo);">Signaling Server</span>
+                <span class="diagram-tag">Signaling Server</span>
             </div>
             
-            <div class="signaling-path left"></div>
-            <div class="signaling-path right"></div>
-
-            <div class="p2p-visual">
-                <div class="node">
+            <div class="p2p-nodes-container">
+                <div class="node left-node">
                     <div class="node-icon">
                         <svg width="40" height="40" viewBox="0 0 64 64" fill="none">
                             <rect x="12" y="16" width="40" height="28" rx="4" stroke="url(#logoGrad)" stroke-width="3"/>
@@ -439,13 +489,7 @@
                     <span>Secure Host</span>
                 </div>
 
-                <div class="connection-path">
-                    <div class="burst-particle"></div>
-                    <div class="burst-particle" style="animation-delay: -0.8s"></div>
-                    <div class="burst-particle" style="animation-delay: -1.6s"></div>
-                </div>
-
-                <div class="node">
+                <div class="node right-node">
                     <div class="node-icon" style="border-color: var(--accent-secondary)">
                         <svg width="40" height="40" viewBox="0 0 64 64" fill="none">
                             <rect x="18" y="10" width="28" height="44" rx="6" stroke="var(--accent-secondary)" stroke-width="3"/>
@@ -456,10 +500,10 @@
                     <span>Recipient</span>
                 </div>
             </div>
-            <p style="text-align: center; color: var(--slate-400); font-size: 14px; margin-top: 50px; max-width: 550px; margin-left: auto; margin-right: auto; line-height: 1.6;">
+
+            <p class="diagram-note">
                 The signaling server only facilitates the initial handshake. Once connected, 
-                your data flows through a **Direct Neural Tunnel** between browsers, 
-                protected by DTLS 1.3 encryption.
+                your data flows through a **Direct Neural Tunnel** between browsers.
             </p>
         </div>
 
