@@ -990,11 +990,12 @@
         .recv-page-body {
             flex: 1;
             display: flex;
-            align-items: flex-start;
+            align-items: flex-start; /* Ensure card stays at top */
             justify-content: center;
             width: 100%;
-            padding: 90px 24px 60px;
+            padding: 70px 24px 60px; /* Reduced from 90px for closer proximity to header */
             box-sizing: border-box;
+            position: relative;
         }
 
         /* Global Footer */
@@ -1119,6 +1120,27 @@
 </head>
 
 <body>
+    <!-- Global SVG Definitions (Shared Gradients & Filters) -->
+    <svg style="position: absolute; width: 0; height: 0; overflow: hidden;" aria-hidden="true">
+        <defs>
+            <linearGradient id="logoGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#3b82f6"/>
+                <stop offset="100%" stop-color="#2dd4bf"/>
+            </linearGradient>
+            <linearGradient id="iconGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#3b82f6"/>
+                <stop offset="100%" stop-color="#6366f1"/>
+            </linearGradient>
+            <filter id="logoGlow" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="2" result="blur"/>
+                <feMerge>
+                    <feMergeNode in="blur"/>
+                    <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+            </filter>
+        </defs>
+    </svg>
+
     <!-- Ambient isometric grid (animated via CSS) -->
     <div class="iso-grid" aria-hidden="true"></div>
     <!-- Noise overlay -->
@@ -1159,26 +1181,10 @@
                         <!-- SVG Logo Mark -->
                         <div class="logo-mark">
                             <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <defs>
-                                    <linearGradient id="logoGrad" x1="0" y1="0" x2="1" y2="1">
-                                        <stop offset="0%" stop-color="#3b82f6"/>
-                                        <stop offset="100%" stop-color="#2dd4bf"/>
-                                    </linearGradient>
-                                    <filter id="logoGlow" x="-20%" y="-20%" width="140%" height="140%">
-                                        <feGaussianBlur stdDeviation="2" result="blur"/>
-                                        <feMerge>
-                                            <feMergeNode in="blur"/>
-                                            <feMergeNode in="SourceGraphic"/>
-                                        </feMerge>
-                                    </filter>
-                                </defs>
-                                
                                 <!-- Outer 'D' shape -->
                                 <path d="M22 14h14c11 0 11 18 11 18s0 18-11 18H22" stroke="url(#logoGrad)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" filter="url(#logoGlow)"/>
-                                
-                                <!-- Drop Arrow (replacing the vertical bar of the D) -->
+                                <!-- Drop Arrow -->
                                 <path d="M22 10v35l-6-6M22 45l6-6" stroke="url(#logoGrad)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" filter="url(#logoGlow)"/>
-                                
                                 <!-- Zone Marker -->
                                 <circle cx="36" cy="32" r="3" fill="#6366f1" filter="url(#logoGlow)">
                                     <animate attributeName="opacity" values="0.4;1;0.4" dur="2s" repeatCount="indefinite" />
@@ -1320,67 +1326,57 @@
         }
 
         const STATUS_ICONS = {
-            connecting: `<svg class="status-svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            connecting: `<svg class="status-svg spin-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
                 <circle cx="12" cy="12" r="9" stroke="rgba(255,255,255,0.1)"/>
-                <path class="icon-path-orbit" d="M12 3 A9 9 0 0 1 21 12"/>
-                <circle class="icon-path-orbit" cx="12" cy="3" r="2" fill="currentColor" stroke="none"/>
+                <path d="M12 3 A9 9 0 0 1 21 12"/>
             </svg>`,
             connected: `<svg class="status-svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <path class="icon-path-check" d="M20 6L9 17L4 12"/>
             </svg>`,
-            transferring: `<svg class="status-svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            transferring: `<svg class="status-svg spin-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12 3V16M12 16L17 11M12 16L7 11"/>
-                <circle class="icon-path-stream" cx="12" cy="19" r="1" fill="currentColor" stroke="none"/>
-                <circle class="icon-path-stream" cx="12" cy="22" r="1.5" fill="currentColor" stroke="none"/>
                 <path d="M5 21H19" stroke-opacity="0.2"/>
             </svg>`,
-            complete: `<svg class="status-svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path class="icon-path-check" d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                <polyline class="icon-path-check" points="22 4 12 14.01 9 11.01"/>
+            complete: `<svg class="status-svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                <polyline points="22 4 12 14.01 9 11.01"/>
             </svg>`,
             'sender-offline': `<svg class="status-svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
                 <path d="M1 1l22 22M16.7 3.3a8.5 8.5 0 0 1 5 5M8.5 21.5a8.5 8.5 0 0 1-5-5"/>
-                <path d="M5 5a8.5 8.5 0 0 0 0 12M19 19a8.5 8.5 0 0 0 0-12" opacity="0.3"/>
             </svg>`,
-            error: `<svg class="status-svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-                <path class="icon-path-cross" d="M18 6L6 18"/>
-                <path class="icon-path-cross" d="M6 6l12 12"/>
+            error: `<svg class="status-svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round">
+                <path d="M18 6L6 18M6 6l12 12"/>
             </svg>`,
         };
 
         function setStatus(state, text, sub) {
             const statusIcon = document.getElementById('statusIcon');
+            if(!statusIcon) return;
             
-            // Fade out current content
-            statusIcon.style.opacity = '0';
-            statusIcon.style.transform = 'scale(0.8)';
+            // Apply state class immediately to parent for colors
+            statusIcon.className = 'status-icon ' + state;
+            
+            // Instant icon swap to prevent "stuck" spinners
+            statusIcon.innerHTML = STATUS_ICONS[state] || STATUS_ICONS.connecting;
+            
+            statusText.textContent = text;
+            statusSub.textContent  = sub;
 
-            setTimeout(() => {
-                statusIcon.innerHTML  = STATUS_ICONS[state] || STATUS_ICONS.connecting;
-                statusIcon.className  = 'status-icon ' + state;
-                
-                statusText.textContent = text;
-                statusSub.textContent  = sub;
+            // Adjust outer ring speed and state
+            const dur = state === 'transferring' ? '0.7s' : state === 'error' ? '5s' : '2.4s';
+            statusRingOuter.style.animationDuration = dur;
+            statusRingOuter.style.opacity = (state === 'error') ? '0.3' : '1';
 
-                // Adjust outer ring speed and state
-                const dur = state === 'transferring' ? '0.7s' : state === 'error' ? '5s' : '2.4s';
-                const op  = state === 'error' ? '0.3' : '1';
-                statusRingOuter.style.animationDuration = dur;
-                statusRingOuter.style.opacity = op;
-
-                // Fade in new content
-                statusIcon.style.opacity = '1';
-                statusIcon.style.transform = 'scale(1)';
-
-                if (state === 'complete' || state === 'error') {
-                    statusRingOuter.style.display = 'none';
-                    document.querySelector('.status-ring-inner').style.display = 'none';
-                    document.getElementById('newTransferBtn').style.display = 'block';
-                } else {
-                    statusRingOuter.style.display = 'block';
-                    document.querySelector('.status-ring-inner').style.display = 'block';
-                }
-            }, 300);
+            if (state === 'complete' || state === 'error') {
+                statusRingOuter.style.display = 'none';
+                const inner = document.querySelector('.status-ring-inner');
+                if(inner) inner.style.display = 'none';
+                document.getElementById('newTransferBtn').style.display = 'block';
+            } else {
+                statusRingOuter.style.display = 'block';
+                const inner = document.querySelector('.status-ring-inner');
+                if(inner) inner.style.display = 'block';
+            }
         }
 
         // ─────────────────────────────────────────────────────────
