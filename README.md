@@ -14,8 +14,6 @@
 ## 📺 Website Preview
 
 <div align="center">
-  <img src="./assets/hero.png" width="800" alt="DropZone Hero">
-  <br><br>
   <img src="./assets/main.png" width="400" alt="Main Interface">
   <img src="./assets/email.png" width="400" alt="Email Sharing">
   <br>
