@@ -14,11 +14,25 @@
 ## 📺 Website Preview
 
 <div align="center">
-  <img src="./assets/main.png" width="400" alt="Main Interface">
-  <img src="./assets/email.png" width="400" alt="Email Sharing">
+  <p><strong>Main Interface & Neural P2P Protocol</strong></p>
+  <img src="./assets/main.png" width="850" alt="DropZone Main Interface">
+  <br><br>
+  <p><strong>Real-time Sharing Dashboard & Handshake Visualization</strong></p>
+  <img src="./assets/sharing.png" width="850" alt="Sharing Dashboard">
+  <br><br>
+  <div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">
+    <div style="text-align: center;">
+      <p><strong>Email Invitation</strong></p>
+      <img src="./assets/email.png" width="415" alt="Email Sharing">
+    </div>
+    <div style="text-align: center;">
+      <p><strong>Quick Pick Modal</strong></p>
+      <img src="./assets/quickpick.png" width="415" alt="Quick Pick Modal">
+    </div>
+  </div>
   <br>
-  <img src="./assets/quickpick.png" width="400" alt="Quick Pick Modal">
-  <img src="./assets/qr.png" width="400" alt="QR Generation">
+  <p><strong>Interactive Neural Protocol Diagram</strong></p>
+  <img src="./assets/diagram.png" width="850" alt="Neural P2P Diagram">
 </div>
 
 > [!TIP]
