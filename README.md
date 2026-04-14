@@ -13,17 +13,15 @@
 
 ## 📺 Website Preview
 
-````carousel
-![Hero Mockup](./assets/hero.png)
-<!-- slide -->
-![Main Interface](./assets/main.png)
-<!-- slide -->
-![Email Sharing](./assets/email.png)
-<!-- slide -->
-![Quick Pick Modal](./assets/quickpick.png)
-<!-- slide -->
-![QR Generation](./assets/qr.png)
-````
+<div align="center">
+  <img src="./assets/hero.png" width="800" alt="DropZone Hero">
+  <br><br>
+  <img src="./assets/main.png" width="400" alt="Main Interface">
+  <img src="./assets/email.png" width="400" alt="Email Sharing">
+  <br>
+  <img src="./assets/quickpick.png" width="400" alt="Quick Pick Modal">
+  <img src="./assets/qr.png" width="400" alt="QR Generation">
+</div>
 
 > [!TIP]
 > **View the Interactive Recording**: [Click here to view the full UI walkthrough](./assets/preview.webp)
@@ -77,7 +75,7 @@ sequenceDiagram
     Sig->>R: Relay ICE Candidates
     
     note over S,R: Phase 4: Direct Neural Tunnel
-    S<->>R: Secure DTLS 1.3 Bridge Established
+    S-->>R: Secure DTLS 1.3 Bridge Established
     S-->>R: Encrypted Data Stream (P2P)
     note right of R: Data never touches the server
 ```
