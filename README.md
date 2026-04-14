@@ -50,47 +50,49 @@
 
 ---
 
-## 🏗️ Architecture
+## 🏗️ Neural Architecture
+
+DropZone operates on a dual-phase **Neural P2P Protocol**, segregating discovery from data transmission to ensure maximum security and speed.
 
 ```mermaid
 sequenceDiagram
-    participant S as Sender
-    participant Sig as Signaling Server
-    participant R as Receiver
+    participant S as Secure Host (Sender)
+    participant Sig as Signaling Hub (Socket.io)
+    participant R as Recipient (Receiver)
     
-    Note over S,R: 1. Setup Phase
-    S->>Sig: Create Room (Metadata)
-    Sig-->>S: shareURL established
+    note over S,Sig: Phase 1: Neural Handshake
+    S->>Sig: Create P2P Room (Metadata)
+    Sig-->>S: Session ID & Secure Path established
     
-    Note over S,R: 2. Discovery Phase
-    R->>Sig: Join Room (roomId)
-    Sig->>S: peer-joined notification
+    note over Sig,R: Phase 2: Peer Discovery
+    R->>Sig: Join P2P Room (Session ID)
+    Sig->>S: Signal: Recipient Online
     
-    Note over S,R: 3. WebRTC Negotiation
-    S->>Sig: Send Offer (SDP)
-    Sig->>R: Forward Offer
-    R->>Sig: Send Answer (SDP)
-    Sig->>S: Forward Answer
-    S->>Sig: ICE Candidates
+    note over S,R: Phase 3: WebRTC ICE Negotiation
+    S->>Sig: Peer Offers (SDP)
+    Sig->>R: Relay Offer
+    R->>Sig: Peer Answer (SDP)
+    Sig->>S: Relay Answer
+    S->>Sig: ICE Candidates (Routing)
     Sig->>R: Relay ICE Candidates
     
-    Note over S,R: 4. Secure Data Transfer
-    S<->>R: DTLS 1.3 Secure P2P Channel
-    S-->>R: Encrypted File Chunks (16KB)
-    Note right of R: Reassembled in Memory
+    note over S,R: Phase 4: Direct Neural Tunnel
+    S<->>R: Secure DTLS 1.3 Bridge Established
+    S-->>R: Encrypted Data Stream (P2P)
+    note right of R: Data never touches the server
 ```
 
 ---
 
 ## 🛠️ Technology Stack
 
-| Layer | Technology |
-| :--- | :--- |
-| **Frontend** | Vanilla JS (ES6+), Modern CSS (Glassmorphism), Canvas API |
-| **P2P Engine** | WebRTC (DataChannel), DTLS 1.3, ECDSA |
-| **Signaling** | Socket.io (Node.js/Express) |
-| **Utilities** | QRCode.js, Nodemailer (Email Invitations) |
-| **Infrastructure** | Node.js, Express |
+| Layer | Technology | Purpose |
+| :--- | :--- | :--- |
+| **P2P Engine** | WebRTC (DataChannel) | Low-latency direct binary transfer |
+| **Security** | DTLS 1.3 & ECDSA | Industry-standard encryption & auth |
+| **Frontend** | Vanilla ES6+ & CSS3 | Cinematic Glassmorphism UI |
+| **Signaling** | Socket.io (Node.js) | Real-time Peer Discovery |
+| **Visuals** | Canvas API & Inline SVG | Neural Auras & Adaptive Diagrams |
 
 ---
 
@@ -104,11 +106,10 @@ sequenceDiagram
    ```
 
 2. **Configure Environment**
-   Rename `.env.example` to `.env`:
+   Rename `.env.example` to `.env` to enable email invitations:
    ```env
    PORT=3000
    SMTP_HOST=smtp.gmail.com
-   SMTP_PORT=587
    SMTP_USER=your-email@gmail.com
    SMTP_PASS=your-app-password
    ```
@@ -121,7 +122,7 @@ sequenceDiagram
 ---
 
 ## 🤝 Contributing
-We welcome contributions! Please feel free to open issues or submit pull requests to help make DropZone better.
+We welcome contributions! Please feel free to open issues or submit pull requests to help evolve the Neural P2P ecosystem.
 
 ## 📄 License
 Released under the [MIT License](LICENSE).
@@ -129,5 +130,5 @@ Released under the [MIT License](LICENSE).
 ---
 
 <p align="center">
-  Built with ❤️ for a faster, more secure web.
+  Built with ❤️ for a faster, more independent, and secure web.
 </p>
