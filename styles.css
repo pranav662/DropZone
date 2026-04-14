@@ -51,9 +51,10 @@ body {
     color: var(--slate-50);
     min-height: 100vh;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    padding: 24px;
+    justify-content: flex-start;
+    padding: 0;
     overflow-x: hidden;
     position: relative;
 }
@@ -112,6 +113,7 @@ body::after {
 .container {
     width: 100%;
     max-width: 800px;
+    margin: 100px auto 60px;
     position: relative;
     z-index: 1;
     animation: entrance 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
@@ -2299,3 +2301,201 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visib
 .modal-body h3 { font-size: 16px; color: #fff; margin-top: 24px; margin-bottom: 8px; }
 .modal-body ul { margin-bottom: 16px; padding-left: 20px; }
 .modal-body li { margin-bottom: 6px; }
+
+/* ============================================================
+   HOW IT WORKS / DETAILS SECTION
+   ============================================================ */
+
+.details-wrapper {
+    width: 100%;
+    max-width: 1100px;
+    margin: 80px auto 120px;
+    padding: 0 24px;
+    position: relative;
+    z-index: 10;
+}
+
+.details-header {
+    text-align: center;
+    margin-bottom: 80px;
+}
+
+.details-header h2 {
+    font-size: 48px;
+    font-weight: 800;
+    margin-bottom: 16px;
+    letter-spacing: -1.5px;
+    background: linear-gradient(135deg, #fff, #94a3b8);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.details-header p {
+    color: var(--slate-400);
+    font-size: 18px;
+}
+
+/* ── Diagram ── */
+.p2p-diagram-container {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 40px;
+    padding: 60px;
+    margin-bottom: 100px;
+    position: relative;
+    overflow: hidden;
+}
+
+.p2p-visual {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 800px;
+    margin: 0 auto;
+    position: relative;
+}
+
+.node {
+    width: 120px;
+    text-align: center;
+    position: relative;
+    z-index: 2;
+}
+
+.node-icon {
+    width: 80px;
+    height: 80px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+}
+
+.node span {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--slate-300);
+}
+
+.connection-path {
+    flex: 1;
+    height: 2px;
+    background: rgba(255,255,255,0.05);
+    margin: 0 20px;
+    position: relative;
+    top: -20px;
+}
+
+.transfer-particle {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    background: var(--accent-secondary);
+    border-radius: 50%;
+    box-shadow: 0 0 15px var(--accent-secondary);
+    top: -2px;
+    left: 0;
+    animation: flow 3s infinite linear;
+}
+
+@keyframes flow {
+    0%   { left: 0;   opacity: 0; }
+    20%  { opacity: 1; }
+    80%  { opacity: 1; }
+    100% { left: 100%; opacity: 0; }
+}
+
+/* ── Feature Rows (Alternating) ── */
+.feature-row {
+    display: flex;
+    align-items: center;
+    gap: 100px;
+    margin-bottom: 120px;
+    opacity: 0;
+    transform: translateY(40px);
+    transition: all 0.8s var(--ease-out-expo);
+}
+
+.feature-row.reveal {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.feature-row.alt {
+    flex-direction: row-reverse;
+}
+
+.feature-content {
+    flex: 1;
+}
+
+.feature-content h3 {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    color: #fff;
+    letter-spacing: -0.5px;
+}
+
+.feature-content p {
+    color: var(--slate-400);
+    font-size: 17px;
+    line-height: 1.7;
+}
+
+.feature-visual {
+    width: 320px;
+    height: 320px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle at center, rgba(59,130,246,0.1) 0%, transparent 70%);
+    position: relative;
+}
+
+.feature-icon-wrapper {
+    width: 140px;
+    height: 140px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 40px 80px rgba(0,0,0,0.5);
+    position: relative;
+    z-index: 2;
+}
+
+.feature-visual::after {
+    content: '';
+    position: absolute;
+    width: 200px;
+    height: 200px;
+    border: 1px dashed rgba(255,255,255,0.1);
+    border-radius: 50%;
+    animation: rotate 20s linear infinite;
+}
+
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+    .feature-row, .feature-row.alt {
+        flex-direction: column;
+        gap: 40px;
+        text-align: center;
+    }
+    .details-header h2 { font-size: 36px; }
+    .p2p-diagram-container { padding: 40px 20px; }
+    .connection-path { display: none; }
+}

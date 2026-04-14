@@ -278,10 +278,33 @@
         }, 22);
     };
 
+    // ─── SCROLL REVEALS ───────────────────────────────────────
+    function initScrollReveals() {
+        const rows = document.querySelectorAll('.feature-row');
+        const observerOptions = {
+            threshold: 0.15,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('reveal');
+                }
+            });
+        }, observerOptions);
+
+        rows.forEach(row => observer.observe(row));
+    }
+
     // ─── INIT ALL ─────────────────────────────────────────────
     function init() {
         injectLineDecorators();
         initCardTilt();
+        initScrollReveals();
+
+        // Ensure main card stays prominent on start
+        window.scrollTo({ top: 0, behavior: 'instant' });
 
         // Add ripple to all action buttons
         document.querySelectorAll('.browse-btn, .copy-btn, .submit-btn, .tab-btn, .reconnect-btn').forEach(addRipple);
