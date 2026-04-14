@@ -15,6 +15,17 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 
+# Agent & AI Metadata
+.agent/
+.gemini/
+.gsd/
+PROJECT_RULES.md
+GSD-STYLE.md
+model_capabilities.yaml
+walkthrough.md
+implementation_plan.md
+task.md
+
 # IDE
 .vscode/
 .idea/
